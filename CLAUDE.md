@@ -94,4 +94,5 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 
 ## 8. Journal
 
-- **17/11/2026** : création du site SAFE à partir de zéro (remplace « Ihssane Yoga ») : accueil FR/EN avec lotus éclaté, offres et tarifs, réservation complète en mode démonstration, charte, mentions légales, conditions de vente, confidentialité. En attente : backend Apps Script, dépôt GitHub, statut (SIRET, assurance, médiateur), domaine.
+- **17/11/2026** : dépôt `i2taconception/safe` créé, GitHub Pages activé (branche `main`, racine). Ancien dépôt `ihssane-yoga` supprimé.
+- **17/11/2026** : création du site SAFE à partir de zéro (remplace « Ihssane Yoga ») : accueil FR/EN avec lotus éclaté, offres et tarifs, réservation complète en mode démonstration, charte, mentions légales, conditions de vente, confidentialité. En attente : backend Apps Script, statut (SIRET, assurance, médiateur), domaine.
