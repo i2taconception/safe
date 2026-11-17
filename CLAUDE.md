@@ -86,7 +86,21 @@ Ordre du formulaire : lieu > participants (prénom, sexe, première séance) > a
 - Lien « Réserver à nouveau » dans l'e-mail de confirmation pour pré-remplir (jamais à partir du seul e-mail).
 - Agenda des réservations partagé avec Adrien (sécurité).
 - **Mode démonstration** tant que `apiReservation` est vide dans `config.js`.
-- **Backend à écrire** (`apps-script/Code.gs`, repris du site précédent et adapté) : config, deplacement (Maps), creneaux, reserver, paypal_creer/valider, liens de paiement des participants, pack, annulation, rappels.
+- **Backend écrit et testé hors ligne** (`apps-script/Code.gs` + `appsscript.json`, 17/11) : config, deplacement (Google Maps), creneaux, reserver, paiement PayPal de la personne qui réserve, liens de paiement des autres participants (`?payer=`), pack (achat `?pack=1`, code `SAFE-XXXXXX`, crédit rendu si annulation dans les délais), annulation par la personne qui réserve ou désinscription d'un participant (`?annulation=…&p=`), « Réserver à nouveau » (`?reprise=`), rappels de la veille à 18 h (part non payée en ligne basculée en espèces), purge mensuelle des infos santé (12 mois).
+- Infos santé : jamais dans l'agenda partagé ; seulement dans l'e-mail à SAFE et une propriété privée de l'événement.
+- Battement autour des séances : 45 min à domicile, 10 min en ligne (`CONFIG.battement`).
+- Pack : vaut pour la part de la personne qui réserve ; le déplacement éventuel se règle en espèces.
+
+### Mise en service (compte safeinfocontact@gmail.com)
+1. Google Agenda : créer « Disponibilités SAFE » et « Réservations SAFE » (partager le second avec Adrien). Noter l'ID de chacun (Paramètres > Intégrer l'agenda).
+2. script.google.com > nouveau projet « Réservations SAFE ». Coller `Code.gs` ; Paramètres > afficher le manifeste, coller `appsscript.json`.
+3. `CONFIG` : `agendaDispos`, `agendaReservations`. Propriétés du script : `ADRESSE_DEPART` (adresse de départ, jamais dans le dépôt public), `PAYPAL_SECRET`.
+4. Exécuter `verifierConfiguration` (autoriser), lire le journal, puis une fois `installerDeclencheurs`.
+5. Déployer > Application Web, exécuter en tant que Moi, accès Tout le monde. Copier l'URL `/exec` dans `assets/js/config.js` (`apiReservation`). Après chaque modification : Gérer les déploiements > Nouvelle version.
+6. PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
+7. Ouvrir des créneaux : événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
+
+Tests : `node outils/tests/tests.mjs` (17 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé).
 
 ## 7. SEO
 
@@ -95,4 +109,5 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 ## 8. Journal
 
 - **17/11/2026** : dépôt `i2taconception/safe` créé, GitHub Pages activé (branche `main`, racine). Ancien dépôt `ihssane-yoga` supprimé.
+- **17/11/2026** : backend de réservation écrit (`apps-script/`) et testé hors ligne ; module de réservation complété (pack, paiement des parts, désinscription, réserver à nouveau). Reste : installation sur le compte Google, PayPal.
 - **17/11/2026** : création du site SAFE à partir de zéro (remplace « Ihssane Yoga ») : accueil FR/EN avec lotus éclaté, offres et tarifs, réservation complète en mode démonstration, charte, mentions légales, conditions de vente, confidentialité. En attente : backend Apps Script, statut (SIRET, assurance, médiateur), domaine.

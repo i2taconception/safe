@@ -78,7 +78,26 @@
       gerer: 'Votre réservation', annulerBtn: 'Annuler cette séance', confirmerAnnulation: 'Confirmer l\'annulation', garder: 'Garder ma séance',
       annulee: 'Cette séance est annulée.', annulationOk: 'C\'est fait : la séance est annulée et un e-mail de confirmation vous a été envoyé.',
       remboursement: 'Les paiements en ligne seront remboursés.', pasRemboursement: 'L\'annulation intervient moins de 24 h avant la séance : elle reste due (conditions de vente).',
-      passee: 'Cette séance est déjà passée.'
+      passee: 'Cette séance est déjà passée.',
+      avecPack: 'Avec mon pack', avecPackAide: 'Le déplacement éventuel se règle en espèces.',
+      codePack: 'Code du pack', codePackAide: 'Reçu par e-mail à l\'achat. Utilisez la même adresse e-mail.', codeInvalide: 'Code au format SAFE-XXXXXX.',
+      lPack: 'Pack (votre séance)',
+      desinscrireBtn: 'Me désinscrire', confirmerDesinscription: 'Confirmer ma désinscription', garderPlace: 'Garder ma place',
+      desinscriptionInfo: 'Vous ne payez rien et le prix des autres participants ne change pas.',
+      desinscriptionOk: 'C\'est fait\u00a0: vous êtes désinscrit et un e-mail de confirmation vous a été envoyé.',
+      partTitre: 'Votre part',
+      partTexte: function (p, m, q) { return p + ', votre part pour la séance SAFE Yoga du ' + q + '\u00a0: <strong>' + m + '</strong>.'; },
+      partPayee: 'Votre part est déjà réglée. Merci\u00a0!', partNonPayable: 'Cette part se règle en espèces le jour de la séance.',
+      partOk: 'Paiement reçu, merci\u00a0! Un e-mail de confirmation vous a été envoyé.', partAnnulee: 'Cette séance ou cette participation est annulée.',
+      repriseInfo: 'Vos informations sont pré-remplies. Vérifiez-les, puis choisissez votre créneau.',
+      lienPack: 'Acheter un pack de 11 séances au prix de 10',
+      packTitre: 'Acheter un pack', packIntro: '11 séances au prix de 10, valables 1 an, pour une durée et un format. Paiement en une fois en ligne. Vous recevez votre code par e-mail.',
+      packFormat: 'Format', packDuree: 'Durée', packTaille: 'Nombre de personnes', seul: 'Seul', aDeux: 'À 2', troisSix: 'De 3 à 6',
+      packPrix: function (m, pp) { return 'Prix du pack\u00a0: <strong>' + m + '</strong> (11 séances à ' + pp + ' par personne, la 11e incluse).'; },
+      packNom: 'Nom et prénom', acheterPack: 'Payer le pack', simulerPack: 'Simuler le paiement du pack',
+      packOk: function (c) { return 'Merci\u00a0! Votre code de pack est <strong>' + c + '</strong>. Il vous a aussi été envoyé par e-mail.'; },
+      packIndispo: 'L\'achat d\'un pack se fait par paiement en ligne, pas encore disponible. Écrivez-nous pour l\'acheter.',
+      packTaillePers: 'Le pack vaut pour la personne qui réserve, sur des séances de ce nombre de personnes.'
     },
     en: {
       demo: 'Demo mode: time slots and travel cost are fictitious, no booking is saved.',
@@ -139,7 +158,26 @@
       gerer: 'Your booking', annulerBtn: 'Cancel this session', confirmerAnnulation: 'Confirm cancellation', garder: 'Keep my session',
       annulee: 'This session is cancelled.', annulationOk: 'Done: the session is cancelled and a confirmation email has been sent to you.',
       remboursement: 'Online payments will be refunded.', pasRemboursement: 'The cancellation is less than 24 hours before the session: it remains due (terms of sale).',
-      passee: 'This session has already taken place.'
+      passee: 'This session has already taken place.',
+      avecPack: 'With my pack', avecPackAide: 'Any travel cost is paid in cash.',
+      codePack: 'Pack code', codePackAide: 'Sent by email when you bought it. Use the same email address.', codeInvalide: 'Code format: SAFE-XXXXXX.',
+      lPack: 'Pack (your session)',
+      desinscrireBtn: 'Cancel my place', confirmerDesinscription: 'Confirm', garderPlace: 'Keep my place',
+      desinscriptionInfo: 'You pay nothing and the price for the other participants does not change.',
+      desinscriptionOk: 'Done: your place is cancelled and a confirmation email has been sent to you.',
+      partTitre: 'Your share',
+      partTexte: function (p, m, q) { return p + ', your share for the SAFE Yoga session on ' + q + ': <strong>' + m + '</strong>.'; },
+      partPayee: 'Your share is already paid. Thank you!', partNonPayable: 'This share is paid in cash on the day.',
+      partOk: 'Payment received, thank you! A confirmation email has been sent to you.', partAnnulee: 'This session or this place has been cancelled.',
+      repriseInfo: 'Your details are pre-filled. Check them, then choose your time slot.',
+      lienPack: 'Buy a pack of 11 sessions for the price of 10',
+      packTitre: 'Buy a pack', packIntro: '11 sessions for the price of 10, valid for 1 year, for one length and format. Paid once online. You receive your code by email.',
+      packFormat: 'Format', packDuree: 'Length', packTaille: 'Number of people', seul: 'Alone', aDeux: '2 people', troisSix: '3 to 6',
+      packPrix: function (m, pp) { return 'Pack price: <strong>' + m + '</strong> (11 sessions at ' + pp + ' per person, the 11th included).'; },
+      packNom: 'Full name', acheterPack: 'Pay for the pack', simulerPack: 'Simulate pack payment',
+      packOk: function (c) { return 'Thank you! Your pack code is <strong>' + c + '</strong>. It has also been sent to you by email.'; },
+      packIndispo: 'Packs are paid online, which is not available yet. Write to us to buy one.',
+      packTaillePers: 'The pack is for the person booking, on sessions with this number of people.'
     }
   }[LANG];
 
@@ -150,7 +188,10 @@
     limite: 'Too many bookings today with this email. Please contact us directly.',
     refus_carte: 'The payment method was declined. Please try another one.', lien: 'This link is invalid.',
     passee: 'This session has already taken place.', paypal: 'Payment not found or expired. Please start again.',
-    serveur: 'Something went wrong. Please try again or contact us directly.'
+    serveur: 'Something went wrong. Please try again or contact us directly.',
+    pack: 'Unknown, expired or non-matching pack code for this email address.', premiere: 'This email address has already booked: the first-session discount does not apply. Untick it to continue.',
+    montant: 'The price has changed. Please reload the page and start again.', part: 'This share can no longer be paid online: please pay in cash on the day.',
+    participants: 'First name and sex are required for every participant.', paiement: 'Invalid payment option.', tapis: 'Invalid number of mats.'
   };
   function messageErreur(r) {
     if (LANG === 'en') return ERREURS_EN[r.code] || ERREURS_EN.serveur;
@@ -189,7 +230,8 @@
     durees: [45, 60, 90],
     domicile: { 45: [25, 20, 15], 60: [30, 25, 20], 90: [40, 35, 25] },
     enligne: { 45: 20, 60: 25, 90: 35 },
-    maxPersonnes: 6, maxTapis: 6, reductionPremiere: 5, tarifKm: 0.3
+    maxPersonnes: 6, maxTapis: 6, reductionPremiere: 5, tarifKm: 0.3,
+    pack: { seances: 11, payees: 10, validiteJours: 365 }
   };
   function demo(action, p) {
     var rep;
@@ -225,7 +267,15 @@
         format: etat.format, visio: etat.format === 'enligne' ? 'https://meet.google.com/' : '' } };
     } else if (action === 'reservation') {
       rep = { ok: true, reservation: { id: 'demo', statut: 'confirmee', duree: 60, format: 'domicile', personnes: 2,
-        debut: new Date(Date.now() + 3 * 86400e3).toISOString(), dansLesDelais: true, annulable: true } };
+        debut: new Date(Date.now() + 3 * 86400e3).toISOString(), dansLesDelais: true, annulable: true, participant: !!p.p, prenom: p.p ? 'Tom' : '' } };
+    } else if (action === 'part') {
+      rep = { ok: true, part: { prenom: 'Tom', montant: 25, statut: 'a_regler', mode: 'lien', payable: true, duree: 60, format: 'domicile',
+        debut: new Date(Date.now() + 3 * 86400e3).toISOString(), statutSeance: 'confirmee' } };
+    } else if (action === 'reprise') {
+      rep = { ok: true, reprise: { format: 'domicile', duree: 60, tapis: 1, participants: [{ prenom: 'Léa', sexe: 'femme', email: '' }, { prenom: 'Tom', sexe: 'homme', email: 'tom@exemple.fr' }],
+        adresse: { rue: '12 rue Paradis', cp: '13006', ville: 'Marseille' }, client: { nom: 'Martin', email: 'lea@exemple.fr', tel: '06 12 34 56 78' }, sante: '' } };
+    } else if (action === 'paypal_valider_pack') {
+      rep = { ok: true, pack: { code: 'SAFE-DEMO01', restant: 11, total: 11, expire: new Date(Date.now() + 365 * 86400e3).toISOString() } };
     } else {
       rep = { ok: true };
     }
@@ -248,7 +298,7 @@
     participants: [{ prenom: '', sexe: '', premiere: false, charte: false, mode: 'enligne', email: '' }],
     adresse: { rue: '', cp: '', ville: '' }, deplacement: null, duree: null, tapis: 0,
     fenetre: aujourdhui(), jours: null, jour: null, creneau: null,
-    sante: '', consentSante: false, client: { nom: '', email: '', tel: '' }, cgv: false, envoi: false
+    sante: '', consentSante: false, client: { nom: '', email: '', tel: '' }, cgv: false, envoi: false, packCode: ''
   };
   var params = new URLSearchParams(window.location.search);
 
@@ -264,14 +314,16 @@
     var pp = etat.duree ? prixParPersonne(etat.format, etat.duree, n) : 0;
     var dep = etat.format === 'domicile' && etat.deplacement ? (etat.deplacement.montant || 0) : 0;
     var partDep = Math.round(dep / n * 100) / 100;
-    var parts = etat.participants.slice(0, n).map(function (p) {
+    var pack0 = etat.participants[0].mode === 'pack';
+    var parts = etat.participants.slice(0, n).map(function (p, i) {
+      if (i === 0 && pack0) return partDep;
       return Math.max(0, pp - (p.premiere ? cat.reductionPremiere : 0)) + partDep;
     });
     // L'arrondi du partage du déplacement est absorbé par la personne qui réserve.
     parts[0] = Math.round((parts[0] + (dep - partDep * n)) * 100) / 100;
-    var nbPremiere = etat.participants.slice(0, n).filter(function (p) { return p.premiere; }).length;
+    var nbPremiere = etat.participants.slice(0, n).filter(function (p, i) { return p.premiere && !(i === 0 && pack0); }).length;
     var total = parts.reduce(function (a, b) { return a + b; }, 0);
-    return { pp: pp, dep: dep, partDep: partDep, parts: parts, nbPremiere: nbPremiere, total: Math.round(total * 100) / 100 };
+    return { pp: pp, dep: dep, partDep: partDep, parts: parts, nbPremiere: nbPremiere, pack0: pack0, total: Math.round(total * 100) / 100 };
   }
 
   // ------------------------------------------------------------------ Squelette
@@ -599,7 +651,7 @@
     // Mode de paiement de chaque participant.
     var enLigne = enLignePossible();
     etat.participants.slice(0, etat.nb).forEach(function (p, i) {
-      if (!enLigne && p.mode !== 'especes') p.mode = 'especes';
+      if (!enLigne && (p.mode === 'enligne' || p.mode === 'lien')) p.mode = 'especes';
       if (i === 0 && p.mode === 'lien') p.mode = 'enligne';
       if (i > 0 && p.mode === 'enligne') p.mode = 'lien';
       var titre = i === 0 ? TXT.votrePaiement : TXT.paiementDe(p.prenom || TXT.participant(i));
@@ -607,7 +659,13 @@
       var opts = [];
       if (enLigne) opts.push(i === 0 ? { valeur: 'enligne', titre: TXT.payerEnLigne, detail: esc(TXT.payerEnLigneAide) } : { valeur: 'lien', titre: TXT.lienEmail, detail: esc(TXT.lienEmailAide) });
       opts.push({ valeur: 'especes', titre: TXT.especes, detail: esc(TXT.especesAide) });
-      bloc.appendChild(groupeRadio('mode' + i, opts, p.mode, function (v) { p.mode = v; etapePaiement(false); }, 'tp-' + i));
+      if (i === 0) opts.push({ valeur: 'pack', titre: TXT.avecPack, detail: esc(TXT.avecPackAide) });
+      bloc.appendChild(groupeRadio('mode' + i, opts, p.mode, function (v) { p.mode = v; recap(); etapePaiement(false); var r = document.getElementById('mode' + i + '-' + v); if (r) r.focus(); }, 'tp-' + i));
+      if (i === 0 && p.mode === 'pack') {
+        var cp = el('<div class="champ" style="margin-top:.7rem"><label for="c-pack">' + TXT.codePack + '</label><input id="c-pack" autocomplete="off" autocapitalize="characters" placeholder="SAFE-XXXXXX" required aria-required="true" aria-describedby="c-pack-aide" value="' + esc(etat.packCode) + '"><span class="aide" id="c-pack-aide">' + TXT.codePackAide + '</span></div>');
+        cp.querySelector('input').addEventListener('input', function (e) { etat.packCode = e.target.value; });
+        bloc.appendChild(cp);
+      }
       if (i > 0 && p.mode === 'lien') {
         var ch = el('<div class="champ" style="margin-top:.7rem"><label for="p' + i + '-email">' + esc(TXT.emailParticipant(p.prenom || TXT.participant(i))) + '</label><input id="p' + i + '-email" type="email" required aria-required="true" value="' + esc(p.email) + '"></div>');
         ch.querySelector('input').addEventListener('input', function (e) { p.email = e.target.value; });
@@ -633,6 +691,8 @@
     verifier(nom, nom.value.trim() ? '' : TXT.champRequis);
     verifier(tel, !tel.value.trim() ? TXT.champRequis : (tel.value.replace(/\D/g, '').length < 9 ? TXT.telInvalide : ''));
     verifier(email, !email.value.trim() ? TXT.champRequis : (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim()) ? '' : TXT.emailInvalide));
+    var cpk = document.getElementById('c-pack');
+    if (cpk) verifier(cpk, /^SAFE-[A-Z0-9]{6}$/i.test(cpk.value.trim()) ? '' : TXT.codeInvalide);
     etat.participants.slice(1, etat.nb).forEach(function (p, j) {
       var x = document.getElementById('p' + (j + 1) + '-email');
       if (x) verifier(x, !x.value.trim() ? TXT.champRequis : (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(x.value.trim()) ? '' : TXT.emailInvalide));
@@ -658,14 +718,14 @@
       }),
       client: { nom: etat.client.nom.trim(), email: etat.client.email.trim(), tel: etat.client.tel.trim() },
       sante: etat.sante.trim() && etat.consentSante ? etat.sante.trim() : '', consentSante: !!(etat.sante.trim() && etat.consentSante),
-      cgv: etat.cgv, montantAttendu: calcul().total,
+      cgv: etat.cgv, montantAttendu: calcul().total, pack: etat.participants[0].mode === 'pack' ? etat.packCode.trim().toUpperCase() : '',
       piege: (document.getElementById('c-site') || {}).value || ''
     };
   }
   function zonePaiement() {
     var z = document.getElementById('zone-paiement'); z.innerHTML = '';
     msg('err-paiement', '');
-    if (etat.participants[0].mode !== 'enligne') { z.appendChild(boutonConfirmer()); return; }
+    if (etat.participants[0].mode !== 'enligne' || !(calcul().parts[0] > 0)) { z.appendChild(boutonConfirmer()); return; }
     if (DEMO) {
       var b = el('<button type="button" class="btn">' + TXT.simuler + '</button>');
       b.addEventListener('click', function () { var d = valider(); if (!d) return; post({ action: 'paypal_valider', orderID: 'DEMO' }).then(function (r) { confirmation(r.reservation, d); }); });
@@ -744,6 +804,7 @@
     if (etat.duree) {
       var m = calcul();
       html += '<div class="ligne" style="margin-top:1rem"><span>' + TXT.lSeance(etat.nb, String(m.pp)) + '</span><span>' + euros(m.pp * etat.nb) + '</span></div>';
+      if (m.pack0) html += '<div class="ligne"><span>' + TXT.lPack + '</span><span>−' + euros(m.pp) + '</span></div>';
       if (m.nbPremiere) html += '<div class="ligne"><span>' + TXT.lPremiere(m.nbPremiere) + '</span><span>−' + euros(m.nbPremiere * etat.config.catalogue.reductionPremiere) + '</span></div>';
       if (etat.format === 'domicile' && etat.deplacement) html += '<div class="ligne"><span>' + TXT.lDeplacement + '</span><span>' + (m.dep ? euros(m.dep) : TXT.gratuit) + '</span></div>';
       html += '<div class="total"><span>' + TXT.total + '</span><span>' + euros(m.total) + '</span></div>';
@@ -782,36 +843,168 @@
   }
 
   // ------------------------------------------------------------------ Annulation (lien de l'e-mail)
-  function modeAnnulation(id, cle) {
+  function modeAnnulation(id, cle, p) {
     racine.innerHTML = '<div class="confirmation"><h2 tabindex="-1">' + TXT.gerer + '</h2><div class="contenu-a"><p class="chargement">' + TXT.chargement + '</p></div></div>';
     var zone = racine.querySelector('.contenu-a');
-    get({ action: 'reservation', id: id, cle: cle }).then(function (r) {
+    var q = { action: 'reservation', id: id, cle: cle };
+    if (p) q.p = p;
+    get(q).then(function (r) {
       if (!r.ok) { zone.innerHTML = '<p class="statut ko">' + messageErreur(r) + '</p>'; return; }
       var s = r.reservation;
       var quand = fmtInstant(s.debut, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-      zone.innerHTML = '<p><strong>SAFE Yoga</strong>, ' + s.duree + ' ' + TXT.min + ', ' + TXT.personnes(s.personnes || 1) + ', ' + esc(quand) + '.</p>';
+      zone.innerHTML = '<p>' + (s.participant ? esc(s.prenom) + ', ' : '') + '<strong>SAFE Yoga</strong>, ' + s.duree + ' ' + TXT.min + ', ' + TXT.personnes(s.personnes || 1) + ', ' + esc(quand) + '.</p>';
       if (s.statut !== 'confirmee') { zone.appendChild(el('<p>' + TXT.annulee + '</p>')); return; }
       if (!s.annulable) { zone.appendChild(el('<p>' + TXT.passee + '</p>')); return; }
-      zone.appendChild(el('<p>' + (s.dansLesDelais ? TXT.remboursement : TXT.pasRemboursement) + '</p>'));
-      var actions = el('<p style="display:flex;flex-wrap:wrap;gap:.8rem"><button type="button" class="btn">' + TXT.annulerBtn + '</button></p>');
+      zone.appendChild(el('<p>' + (s.participant ? TXT.desinscriptionInfo : (s.dansLesDelais ? TXT.remboursement : TXT.pasRemboursement)) + '</p>'));
+      var actions = el('<p style="display:flex;flex-wrap:wrap;gap:.8rem"><button type="button" class="btn">' + (s.participant ? TXT.desinscrireBtn : TXT.annulerBtn) + '</button></p>');
       zone.appendChild(actions);
       actions.querySelector('button').addEventListener('click', function () {
         actions.innerHTML = '';
-        var oui = el('<button type="button" class="btn">' + TXT.confirmerAnnulation + '</button>');
-        var non = el('<a class="btn btn-clair" href="' + RACINE_SITE + '">' + TXT.garder + '</a>');
+        var oui = el('<button type="button" class="btn">' + (s.participant ? TXT.confirmerDesinscription : TXT.confirmerAnnulation) + '</button>');
+        var non = el('<a class="btn btn-clair" href="' + RACINE_SITE + (LANG === 'en' ? 'en/' : '') + '">' + (s.participant ? TXT.garderPlace : TXT.garder) + '</a>');
         actions.appendChild(oui); actions.appendChild(non); oui.focus();
         oui.addEventListener('click', function () {
           oui.disabled = true;
-          post({ action: 'annuler', id: id, cle: cle }).then(function (x) {
-            zone.innerHTML = x.ok ? '<p class="statut ok" role="status">' + TXT.annulationOk + '</p>' : '<p class="statut ko" role="alert">' + messageErreur(x) + '</p>';
+          var corpsA = { action: 'annuler', id: id, cle: cle };
+          if (p) corpsA.p = Number(p);
+          post(corpsA).then(function (x) {
+            zone.innerHTML = x.ok ? '<p class="statut ok" role="status">' + (s.participant ? TXT.desinscriptionOk : TXT.annulationOk) + '</p>' : '<p class="statut ko" role="alert">' + messageErreur(x) + '</p>';
           }).catch(function () { zone.innerHTML = '<p class="statut ko" role="alert">' + messageErreur({ code: 'serveur' }) + '</p>'; });
         });
       });
     }).catch(function () { zone.innerHTML = '<p class="statut ko">' + messageErreur({ code: 'serveur' }) + '</p>'; });
   }
 
+  // ------------------------------------------------------------------ Payer sa part (lien reçu par e-mail)
+  function boutonsPaypal(conteneur, creer, valider, surOk, surErreur) {
+    if (DEMO) {
+      var b = el('<button type="button" class="btn">' + TXT.simuler + '</button>');
+      b.addEventListener('click', function () { b.disabled = true; valider('DEMO').then(surOk); });
+      conteneur.appendChild(b); return;
+    }
+    conteneur.innerHTML = '<p class="chargement">' + TXT.paypalChargement + '</p>';
+    chargerPaypal().then(function () {
+      conteneur.innerHTML = '';
+      window.paypal.Buttons({
+        style: { layout: 'vertical', shape: 'pill', color: 'gold', label: 'pay', height: 48 },
+        createOrder: function () { return creer().then(function (r) { if (!r.ok) { surErreur(r); throw new Error(r.code); } return r.orderID; }); },
+        onApprove: function (data, actions) { return valider(data.orderID).then(function (r) { if (r.ok) return surOk(r); if (r.code === 'refus_carte') { surErreur(r); return actions.restart(); } surErreur(r); }); },
+        onError: function () { }
+      }).render(conteneur);
+    }).catch(function () { surErreur({ code: 'serveur' }); conteneur.innerHTML = '<p class="statut ko">' + TXT.paypalIndispo + '</p>'; });
+  }
+  function modePayer(id, p, cle) {
+    racine.innerHTML = '<div class="confirmation"><h2 tabindex="-1">' + TXT.partTitre + '</h2><div class="contenu-a"><p class="chargement">' + TXT.chargement + '</p></div></div>';
+    var zone = racine.querySelector('.contenu-a');
+    Promise.all([get({ action: 'config' }), get({ action: 'part', id: id, p: p, cle: cle })]).then(function (r) {
+      etat.config = r[0];
+      if (!r[1].ok) { zone.innerHTML = '<p class="statut ko">' + messageErreur(r[1]) + '</p>'; return; }
+      var x = r[1].part;
+      var quand = fmtInstant(x.debut, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      zone.innerHTML = '<p>' + TXT.partTexte(esc(x.prenom), euros(x.montant), esc(quand)) + '</p>';
+      if (x.statutSeance !== 'confirmee' || x.statut === 'annule' || x.statut === 'rembourse') { zone.appendChild(el('<p>' + TXT.partAnnulee + '</p>')); return; }
+      if (x.statut === 'paye') { zone.appendChild(el('<p class="statut ok">' + TXT.partPayee + '</p>')); return; }
+      if (!x.payable || !enLignePossible()) { zone.appendChild(el('<p>' + TXT.partNonPayable + '</p>')); return; }
+      var err = el('<p class="statut ko" role="alert" hidden></p>'), boutons = el('<div style="max-width:24rem"></div>');
+      zone.appendChild(boutons); zone.appendChild(err);
+      boutonsPaypal(boutons,
+        function () { return post({ action: 'paypal_creer_part', id: id, p: Number(p), cle: cle }); },
+        function (o) { return post({ action: 'paypal_valider_part', orderID: o }); },
+        function () { zone.innerHTML = '<p class="statut ok" role="status">' + TXT.partOk + '</p>'; },
+        function (e) { err.hidden = false; err.textContent = messageErreur(e); });
+    }).catch(function () { zone.innerHTML = '<p class="statut ko">' + messageErreur({ code: 'serveur' }) + '</p>'; });
+  }
+
+  // ------------------------------------------------------------------ Acheter un pack
+  function modePack() {
+    racine.innerHTML = '<p class="chargement">' + TXT.chargement + '</p>';
+    get({ action: 'config' }).then(function (c) {
+      etat.config = c;
+      var a = { format: 'domicile', duree: 60, taille: 1, nom: '', email: '', cgv: false };
+      racine.innerHTML = '';
+      var bloc = el('<section class="etape" aria-labelledby="t-pack"><h2 id="t-pack" tabindex="-1">' + TXT.packTitre + '</h2><p>' + TXT.packIntro + '</p><div class="corps"></div></section>');
+      racine.appendChild(bloc);
+      var zone = bloc.querySelector('.corps');
+      function dessiner() {
+        zone.innerHTML = '';
+        if (DEMO) zone.appendChild(el('<p class="bandeau-demo">' + TXT.demo + '</p>'));
+        zone.appendChild(el('<p class="titre-p" id="pk-f" style="font-weight:650;margin:1rem 0 .5rem">' + TXT.packFormat + '</p>'));
+        zone.appendChild(groupeRadio('pkf', [{ valeur: 'domicile', titre: TXT.domicile }, { valeur: 'enligne', titre: TXT.enligne }], a.format, function (v) { a.format = v; if (v === 'enligne') a.taille = 1; dessiner(); }, 'pk-f'));
+        zone.appendChild(el('<p class="titre-p" id="pk-d" style="font-weight:650;margin:1rem 0 .5rem">' + TXT.packDuree + '</p>'));
+        zone.appendChild(groupeRadio('pkd', c.catalogue.durees.map(function (d) { return { valeur: d, titre: d + ' ' + TXT.min }; }), a.duree, function (v) { a.duree = Number(v); dessiner(); }, 'pk-d'));
+        if (a.format === 'domicile') {
+          zone.appendChild(el('<p class="titre-p" id="pk-t" style="font-weight:650;margin:1rem 0 .5rem">' + TXT.packTaille + '</p>'));
+          zone.appendChild(groupeRadio('pkt', [{ valeur: 1, titre: TXT.seul }, { valeur: 2, titre: TXT.aDeux }, { valeur: 3, titre: TXT.troisSix }], a.taille, function (v) { a.taille = Number(v); dessiner(); }, 'pk-t'));
+          zone.appendChild(el('<p class="petit discret">' + TXT.packTaillePers + '</p>'));
+        }
+        var pp = a.format === 'enligne' ? c.catalogue.enligne[a.duree] : c.catalogue.domicile[a.duree][a.taille - 1];
+        zone.appendChild(el('<div class="encadre"><p>' + TXT.packPrix(euros(pp * c.catalogue.pack.payees), euros(pp)) + '</p></div>'));
+        if (!enLignePossible()) { zone.appendChild(el('<p class="statut ko">' + TXT.packIndispo + ' <a href="mailto:' + esc(cfg.emailContact) + '">' + esc(cfg.emailContact) + '</a></p>')); return; }
+        var f = el('<div class="grille-champs"><div class="champ"><label for="pk-nom">' + TXT.packNom + '</label><input id="pk-nom" autocomplete="name" required value="' + esc(a.nom) + '"></div>' +
+          '<div class="champ"><label for="pk-email">' + TXT.email + '</label><input id="pk-email" type="email" autocomplete="email" required value="' + esc(a.email) + '"></div></div>');
+        f.querySelector('#pk-nom').addEventListener('input', function (e) { a.nom = e.target.value; });
+        f.querySelector('#pk-email').addEventListener('input', function (e) { a.email = e.target.value; });
+        zone.appendChild(f);
+        var cg = el('<div class="case"><input type="checkbox" id="pk-cgv"' + (a.cgv ? ' checked' : '') + '><label for="pk-cgv">' + TXT.cgv + '</label></div>');
+        cg.querySelector('input').addEventListener('change', function (e) { a.cgv = e.target.checked; });
+        zone.appendChild(cg);
+        var err = el('<p class="statut ko" role="alert" hidden></p>'), boutons = el('<div style="max-width:24rem;margin-top:1rem"></div>');
+        zone.appendChild(boutons); zone.appendChild(err);
+        function verifierPack() {
+          var nom = document.getElementById('pk-nom'), em = document.getElementById('pk-email'), premier = null;
+          if (erreurChamp(nom, nom.value.trim() ? '' : TXT.champRequis)) premier = premier || nom;
+          if (erreurChamp(em, /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em.value.trim()) ? '' : TXT.emailInvalide)) premier = premier || em;
+          err.hidden = a.cgv; err.textContent = a.cgv ? '' : TXT.cgvRequis;
+          if (!a.cgv) premier = premier || document.getElementById('pk-cgv');
+          if (premier) { premier.focus(); return null; }
+          return { format: a.format, duree: a.duree, taille: a.taille, client: { nom: a.nom.trim(), email: a.email.trim() }, cgv: true };
+        }
+        function fini(r) {
+          racine.innerHTML = '';
+          var ok = el('<div class="confirmation" role="status"><h2 tabindex="-1">' + TXT.packTitre + '</h2><p>' + TXT.packOk(esc(r.pack.code)) + '</p>' +
+            '<p><a class="btn" href="./">' + (LANG === 'en' ? 'Book a session' : 'Réserver une séance') + '</a></p></div>');
+          racine.appendChild(ok); ok.querySelector('h2').focus();
+        }
+        if (DEMO) {
+          var b = el('<button type="button" class="btn">' + TXT.simulerPack + '</button>');
+          b.addEventListener('click', function () { if (!verifierPack()) return; post({ action: 'paypal_valider_pack', orderID: 'DEMO' }).then(fini); });
+          boutons.appendChild(b);
+        } else {
+          chargerPaypal().then(function () {
+            window.paypal.Buttons({
+              style: { layout: 'vertical', shape: 'pill', color: 'gold', label: 'pay', height: 48 },
+              onClick: function (data, actions) { return verifierPack() ? actions.resolve() : actions.reject(); },
+              createOrder: function () { return post(Object.assign({ action: 'paypal_creer_pack' }, verifierPack())).then(function (r) { if (!r.ok) { err.hidden = false; err.textContent = messageErreur(r); throw new Error(r.code); } return r.orderID; }); },
+              onApprove: function (data, actions) { return post({ action: 'paypal_valider_pack', orderID: data.orderID }).then(function (r) { if (r.ok) return fini(r); err.hidden = false; err.textContent = messageErreur(r); if (r.code === 'refus_carte') return actions.restart(); }); }
+            }).render(boutons);
+          }).catch(function () { err.hidden = false; err.textContent = TXT.paypalIndispo; });
+        }
+      }
+      dessiner();
+    }).catch(function () { racine.innerHTML = '<p class="statut ko">' + TXT.erreurChargement + '</p>'; });
+  }
+
+  // ------------------------------------------------------------------ Réserver à nouveau (pré-remplissage)
+  function appliquerReprise(r) {
+    etat.format = r.format; etat.duree = r.duree; etat.nb = r.participants.length; etat.tapis = r.tapis || 0;
+    etat.participants = r.participants.map(function (x, i) {
+      return { prenom: x.prenom, sexe: x.sexe, premiere: false, charte: false, mode: i ? (x.email && enLignePossible() ? 'lien' : 'especes') : (enLignePossible() ? 'enligne' : 'especes'), email: x.email || '' };
+    });
+    if (r.adresse) etat.adresse = r.adresse;
+    etat.client = { nom: r.client.nom, email: r.client.email, tel: r.client.tel };
+    etat.sante = r.sante || '';
+    etapeFormat();
+    etapePersonnes(false);
+    if (etat.format === 'domicile') etapeAdresse(false); else etapeDuree(false);
+    var col = racine.querySelector('.resa-etapes');
+    col.insertBefore(el('<p class="encadre" role="status">' + TXT.repriseInfo + '</p>'), col.firstChild);
+    recap();
+  }
+
   // ------------------------------------------------------------------ Démarrage
-  if (params.get('annulation') && params.get('cle')) { modeAnnulation(params.get('annulation'), params.get('cle')); return; }
+  if (params.get('annulation') && params.get('cle')) { modeAnnulation(params.get('annulation'), params.get('cle'), params.get('p')); return; }
+  if (params.get('payer') && params.get('cle') && params.get('p')) { modePayer(params.get('payer'), params.get('p'), params.get('cle')); return; }
+  if (params.get('pack')) { modePack(); return; }
   racine.innerHTML = '<p class="chargement">' + TXT.chargement + '</p>';
   get({ action: 'config' }).then(function (c) {
     if (!c.ok) throw c;
@@ -820,7 +1013,11 @@
     etapeFormat();
     recap();
     var fmt = params.get('format');
-    if (fmt === 'domicile' || fmt === 'enligne') { etat.format = fmt; etapeFormat(); etapePersonnes(false); recap(); }
+    if (params.get('reprise') && params.get('cle')) {
+      get({ action: 'reprise', id: params.get('reprise'), cle: params.get('cle') }).then(function (r) { if (r.ok) appliquerReprise(r.reprise); });
+    } else if (fmt === 'domicile' || fmt === 'enligne') { etat.format = fmt; etapeFormat(); etapePersonnes(false); recap(); }
+    var lienPack = el('<p class="petit" style="margin-top:1.5rem"><a href="?pack=1">' + TXT.lienPack + '</a></p>');
+    racine.appendChild(lienPack);
   }).catch(function () {
     racine.innerHTML = '<p class="statut ko">' + TXT.erreurChargement + ' <a href="mailto:' + esc(cfg.emailContact || '') + '">' + esc(cfg.emailContact || '') + '</a></p>';
   });
