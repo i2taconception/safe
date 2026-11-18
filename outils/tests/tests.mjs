@@ -39,12 +39,14 @@ test('montants : réduction première séance, déplacement partagé, arrondi po
   const p = c.calculerMontants('domicile', 60, [false, false], 10, true);
   assert.deepEqual([...p.parts], [5, 30]);
 });
-test('déplacement : Marseille gratuit, Aix au km aller-retour, au-delà de 35 km devis', () => {
+test('déplacement : Marseille gratuit, Aix au km aller-retour, au-delà de 45 km devis', () => {
   const c = creerSimulateur().contexte;
   assert.equal(c.calculerDeplacement('12 Rue Paradis, 13006 Marseille, France', 4000).montant, 0);
   const aix = c.calculerDeplacement('Cours Mirabeau, 13100 Aix-en-Provence, France', 33000);
   assert.equal(aix.zone, 'hors'); assert.equal(aix.km, 66); assert.equal(aix.montant, 20);
   assert.equal(c.calculerDeplacement('69002 Lyon', 315000).zone, 'trop_loin');
+  { const r = c.calculerDeplacement('Cours Mirabeau, 13100 Aix-en-Provence', 40150); assert.equal(r.zone, 'hors'); assert.equal(r.montant, 24); }
+  assert.equal(c.calculerDeplacement('13100 Aix-en-Provence', 45100).zone, 'trop_loin');
 });
 test('créneaux : battement autour d\'un événement occupé', () => {
   const c = creerSimulateur().contexte, h = (x, m = 0) => Date.UTC(2030, 0, 7, x, m);

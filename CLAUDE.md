@@ -6,7 +6,7 @@ Fiche de référence du site. Toute session (Claude ou humaine) la lit avant de 
 
 - **Marque** : SAFE. « Yoga · Coaching · Écoute & conseils ». Devise : « Respirez. Équilibrez. Avancez. »
 - **Offre au lancement** : SAFE Yoga seulement (Hatha, Vinyasa, Yin, respiration, méditation, relaxation, étirements). SAFE Mind, SAFE Care et SAFE Balance sont affichés « En développement ».
-- **Où** : à domicile depuis Marseille 9e (Marseille, Aix-en-Provence, Aubagne, 35 km de route maximum) ou en ligne (visio, monde entier).
+- **Où** : à domicile depuis Marseille 9e (Marseille, Aix-en-Provence, Aubagne, 45 km de route maximum) ou en ligne (visio, monde entier).
 - **Langues** : site et séances en français et en anglais.
 - **Domaine prévu** : safewellbeing.fr (pas encore acheté). Adresse provisoire : https://i2taconception.github.io/safe/
 - **Contact** : safeinfocontact@gmail.com (compte Google dédié : agenda, e-mails, PayPal).
@@ -31,7 +31,7 @@ Fiche de référence du site. Toute session (Claude ou humaine) la lit avant de 
 
 - Première séance : 5 € de réduction par personne (nouveau client). Rien de gratuit.
 - Pack : 11 séances au prix de 10, une durée et un format, valable 1 an, payé en une fois en ligne.
-- Déplacement : gratuit dans Marseille (elle y va en transports) ; au-delà, 0,30 € par km sur l'aller-retour en voiture calculé par Google Maps, arrondi à l'euro, une fois par séance, partagé entre participants, stationnement compris ; au-delà de 35 km de route à l'aller : devis.
+- Déplacement : gratuit dans Marseille (elle y va en transports) ; au-delà, 0,30 € par km sur l'aller-retour en voiture calculé par Google Maps, arrondi à l'euro, une fois par séance, partagé entre participants, stationnement compris ; au-delà de 45 km de route à l'aller : devis (limite portée de 35 à 45 km le 18/11 : Aix centre est à environ 40 km).
 - Groupes : 6 personnes maximum, groupes privés chez l'un d'eux. En ligne : 1 personne.
 - Tapis : apportés gratuitement, 6 maximum.
 - Paiement : PayPal (carte sans compte) ou espèces le jour même. Chaque participant paie sa part (lien PayPal par e-mail ou espèces) ; s'il n'a pas payé en ligne 24 h avant, espèces sur place.

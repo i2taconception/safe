@@ -39,7 +39,7 @@ var CONFIG = {
   maxReservationsParEmailParJour: 4,
 
   departParDefaut: '13009 Marseille, France', // remplacé par la propriété ADRESSE_DEPART
-  kmMaxAller: 35,             // au-delà : devis
+  kmMaxAller: 45,             // au-delà : devis
   codesPostauxGratuits: /\b130(0[1-9]|1[0-6])\b/, // Marseille : déplacement gratuit
 
   dureeConservationSanteJours: 365,
