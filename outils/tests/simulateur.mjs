@@ -48,12 +48,34 @@ export function creerSimulateur({ secret = 'secret-test', clientId = 'client-tes
   let compteur = 0;
   const ev = id => (agendas[id] ||= []);
   const chevauche = (e, a, b) => Date.parse(e.start.dateTime) < b && Date.parse(e.end.dateTime) > a;
+  // Événements répétés (RRULE:FREQ=WEEKLY;UNTIL=...) : développés en occurrences, à l'heure de Paris.
+  function developper(id, avecMaitres = false) {
+    const res = [];
+    for (const e of ev(id)) {
+      const rr = (e.recurrence || []).find(r => r.startsWith('RRULE:'));
+      if (!rr) { res.push(e); continue; }
+      if (avecMaitres) res.push(e);
+      const u = rr.match(/UNTIL=(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/);
+      const until = u ? Date.UTC(+u[1], +u[2] - 1, +u[3], +u[4], +u[5], +u[6]) : Infinity;
+      const d0 = new Date(e.start.dateTime), duree = Date.parse(e.end.dateTime) - d0.getTime();
+      const jour0 = jourParis(d0), heure = formatDate(d0, TZ, 'HH:mm');
+      for (let k = 0; k < 120; k++) {
+        const debut = heureParis(jourParis(new Date(Date.parse(jour0 + 'T12:00:00Z')), 7 * k), heure);
+        if (debut.getTime() > until) break;
+        const iid = e.id + '_' + formatDate(debut, 'UTC', "yyyyMMdd'T'HHmmss'Z'");
+        if ((e.exclus || []).includes(iid)) continue;
+        res.push({ ...structuredClone(e), id: iid, recurringEventId: e.id, recurrence: undefined, exclus: undefined,
+          start: { dateTime: debut.toISOString() }, end: { dateTime: new Date(debut.getTime() + duree).toISOString() } });
+      }
+    }
+    return res;
+  }
 
   const Calendar = {
     Events: {
       list(id, o) {
         const a = Date.parse(o.timeMin), b = Date.parse(o.timeMax);
-        let items = ev(id).filter(e => e.start.dateTime && chevauche(e, a, b));
+        let items = developper(id).filter(e => e.start.dateTime && chevauche(e, a, b));
         if (o.privateExtendedProperty) {
           const [k, v] = o.privateExtendedProperty.split('=');
           items = items.filter(e => e.extendedProperties?.private?.[k] === v);
@@ -61,9 +83,25 @@ export function creerSimulateur({ secret = 'secret-test', clientId = 'client-tes
         items.sort((x, y) => Date.parse(x.start.dateTime) - Date.parse(y.start.dateTime));
         return { items: structuredClone(items) };
       },
+      get(id, evId) {
+        const e = developper(id, true).find(x => x.id === evId) || ev(id).find(x => x.id === evId);
+        if (!e) throw new Error('Not Found');
+        return structuredClone(e);
+      },
+      remove(id, evId) {
+        const i = ev(id).findIndex(x => x.id === evId);
+        if (i >= 0) { ev(id).splice(i, 1); return; }
+        const inst = developper(id).find(x => x.id === evId);
+        if (!inst) throw new Error('Not Found');
+        const m = ev(id).find(x => x.id === inst.recurringEventId);
+        (m.exclus ||= []).push(evId);
+      },
       insert(res, id, o = {}) {
         const e = structuredClone(res);
         e.id = 'ev' + (++compteur);
+        for (const k of ['start', 'end']) if (e[k]?.timeZone && !/[Z+]|-\d\d:\d\d$/.test(e[k].dateTime)) {
+          const [j, h] = e[k].dateTime.split('T'); e[k].dateTime = heureParis(j, h.slice(0, 5)).toISOString();
+        }
         e.htmlLink = 'https://calendar.google.com/event?eid=' + e.id;
         if (e.conferenceData && o.conferenceDataVersion === 1) e.hangoutLink = 'https://meet.google.com/abc-defg-' + compteur;
         delete e.conferenceData;
@@ -82,7 +120,7 @@ export function creerSimulateur({ secret = 'secret-test', clientId = 'client-tes
         const a = Date.parse(q.timeMin), b = Date.parse(q.timeMax);
         const calendars = {};
         for (const { id } of q.items) {
-          calendars[id] = { busy: ev(id).filter(e => e.transparency !== 'transparent' && e.status !== 'cancelled' && chevauche(e, a, b))
+          calendars[id] = { busy: developper(id).filter(e => e.transparency !== 'transparent' && e.status !== 'cancelled' && chevauche(e, a, b))
             .map(e => ({ start: e.start.dateTime, end: e.end.dateTime })) };
         }
         return { calendars };

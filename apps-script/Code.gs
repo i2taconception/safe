@@ -5,7 +5,7 @@
  * (Google Maps), enregistrer les réservations de 1 à 6 personnes, encaisser la part de chacun
  * via PayPal, gérer les packs de 11 séances, prévenir l'enseignante et les clients par e-mail.
  *
- * Disponibilités : créer des événements dans l'agenda « Disponibilités SAFE ».
+ * Disponibilités : page /gestion/ (section Disponibilités), ou événements dans l'agenda « Disponibilités SAFE » :
  *   - titre « Dispo »            : domicile et en ligne
  *   - titre « Dispo en ligne »   : en ligne uniquement
  *   - titre « Dispo domicile »   : domicile uniquement
@@ -108,6 +108,8 @@ function doPost(e) {
       case 'admin_liste':         verifierAdmin_(d.code); return json_(adminListe_());
       case 'admin_pack_especes':  verifierAdmin_(d.code); return json_(adminPackEspeces_(d));
       case 'admin_annuler':       verifierAdmin_(d.code); return json_(adminAnnuler_(d));
+      case 'admin_dispo_ajouter': verifierAdmin_(d.code); return json_(adminDispoAjouter_(d));
+      case 'admin_dispo_retirer': verifierAdmin_(d.code); return json_(adminDispoRetirer_(d));
       default:                    return json_({ ok: false, code: 'action', message: 'Action inconnue.' });
     }
   } catch (err) {
@@ -937,7 +939,7 @@ function adminListe_() {
                  expire: p.expire, achat: p.achat, paiement: p.paiement || 'paypal', montant: p.montant });
   });
   packs.sort(function (a, b) { return Date.parse(b.achat) - Date.parse(a.achat); });
-  return { ok: true, seances: seances, packs: packs, catalogue: CATALOGUE };
+  return { ok: true, seances: seances, packs: packs, dispos: adminDispos_(), catalogue: CATALOGUE };
 }
 
 /** Pack payé en espèces, enregistré par SAFE. */
@@ -996,6 +998,138 @@ function adminAnnuler_(d) {
       MailApp.sendEmail({ to: y.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulationSafe(qd), htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
     });
     return { ok: true, rembourses: rembourses.length, aRembourser: aRembourser.length, prevenus: destinataires.length };
+  });
+}
+
+// ============================================================
+// DISPONIBILITÉS (gérées depuis la page /gestion/ ; écrit dans l'agenda « Disponibilités SAFE »)
+// ============================================================
+var TYPES_DISPO = { tous: 'Dispo', domicile: 'Dispo domicile', enligne: 'Dispo en ligne' };
+var JOURS_SEMAINE = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+function typeDispo_(titre) {
+  titre = String(titre || '').toLowerCase();
+  if (/ligne|visio|online/.test(titre)) return 'enligne';
+  if (/domicile|maison|home/.test(titre)) return 'domicile';
+  return 'tous';
+}
+
+/** "2026-11-25", "09:00" (heure de Paris) -> Date */
+function dateParis_(jour, hhmm) {
+  var t = Date.parse(jour + 'T' + hhmm + ':00Z');
+  for (var i = 0; i < 2; i++) {
+    var local = Date.parse(Utilities.formatDate(new Date(t), CONFIG.fuseau, "yyyy-MM-dd'T'HH:mm:ss") + 'Z');
+    t += Date.parse(jour + 'T' + hhmm + ':00Z') - local;
+  }
+  return new Date(t);
+}
+
+function regleSerie_(master) {
+  var rr = ((master && master.recurrence) || []).filter(function (r) { return /^RRULE:/.test(r); })[0] || '';
+  var m = rr.match(/UNTIL=(\d{4})(\d{2})(\d{2})(T(\d{2})(\d{2})(\d{2})Z)?/), jusqu = '';
+  if (m) {
+    var u = m[4] ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[5], +m[6], +m[7])) : new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 12));
+    jusqu = Utilities.formatDate(u, CONFIG.fuseau, 'yyyy-MM-dd');
+  }
+  var jour = master && master.start && master.start.dateTime ? JOURS_SEMAINE[Number(Utilities.formatDate(new Date(Date.parse(master.start.dateTime)), CONFIG.fuseau, 'u')) % 7] : '';
+  return { hebdo: /FREQ=WEEKLY/.test(rr), jour: jour, jusqu: jusqu };
+}
+
+/** Séances confirmées qui chevauchent [a, b[ (ms). */
+function seancesSur_(a, b) {
+  return listerEvenements_(CONFIG.agendaReservations, new Date(a), new Date(b), null).filter(function (ev) {
+    var q = ev.extendedProperties && ev.extendedProperties.private;
+    return ev.start && ev.start.dateTime && ev.status !== 'cancelled' && ev.transparency !== 'transparent' && q && q.resaId && q.statut === 'confirmee' &&
+      Date.parse(ev.start.dateTime) < b && Date.parse(ev.end.dateTime) > a;
+  });
+}
+
+function adminDispos_() {
+  var tMin = new Date(), tMax = new Date(Date.now() + Math.max(CONFIG.horizonJours, 90) * 86400e3);
+  var evs = listerEvenements_(CONFIG.agendaDispos, tMin, tMax, null).filter(function (ev) {
+    return ev.start && ev.start.dateTime && ev.status !== 'cancelled';
+  });
+  var resas = listerEvenements_(CONFIG.agendaReservations, tMin, tMax, null).filter(function (ev) {
+    var q = ev.extendedProperties && ev.extendedProperties.private;
+    return ev.start && ev.start.dateTime && q && q.resaId && q.statut === 'confirmee' && ev.transparency !== 'transparent';
+  });
+  var series = {};
+  return evs.map(function (ev) {
+    var a = Date.parse(ev.start.dateTime), b = Date.parse(ev.end.dateTime), s = null;
+    if (ev.recurringEventId) {
+      if (!(ev.recurringEventId in series)) {
+        try { series[ev.recurringEventId] = regleSerie_(Calendar.Events.get(CONFIG.agendaDispos, ev.recurringEventId)); }
+        catch (e) { series[ev.recurringEventId] = { hebdo: true, jour: '', jusqu: '' }; }
+      }
+      s = series[ev.recurringEventId];
+    }
+    var n = resas.filter(function (r) { return Date.parse(r.start.dateTime) < b && Date.parse(r.end.dateTime) > a; }).length;
+    return { id: ev.id, serie: ev.recurringEventId || '', regle: s, debut: new Date(a).toISOString(), fin: new Date(b).toISOString(),
+             jour: Utilities.formatDate(new Date(a), CONFIG.fuseau, 'yyyy-MM-dd'),
+             de: Utilities.formatDate(new Date(a), CONFIG.fuseau, 'HH:mm'), a: Utilities.formatDate(new Date(b), CONFIG.fuseau, 'HH:mm'),
+             type: typeDispo_(ev.summary), reservees: n };
+  }).sort(function (x, y) { return Date.parse(x.debut) - Date.parse(y.debut); });
+}
+
+function adminDispoAjouter_(d) {
+  var jour = String(d.date || ''), de = String(d.de || ''), a = String(d.a || ''), type = String(d.type || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(jour)) throw erreurUtilisateur_('date', 'Date invalide.');
+  if (!/^\d{2}:\d{2}$/.test(de) || !/^\d{2}:\d{2}$/.test(a)) throw erreurUtilisateur_('heure', 'Heures invalides.');
+  if (!TYPES_DISPO[type]) throw erreurUtilisateur_('type', 'Type de créneau inconnu.');
+  var debut = dateParis_(jour, de), fin = dateParis_(jour, a);
+  if (fin - debut < Math.min.apply(null, CATALOGUE.durees) * 60e3) throw erreurUtilisateur_('heure', 'Le créneau doit durer au moins ' + Math.min.apply(null, CATALOGUE.durees) + ' minutes, et la fin être après le début.');
+  if (fin <= Date.now()) throw erreurUtilisateur_('date', 'Ce créneau est déjà passé.');
+  if (debut - Date.now() > 366 * 86400e3) throw erreurUtilisateur_('date', 'Date trop lointaine (un an au plus).');
+  var ev = { summary: TYPES_DISPO[type], transparency: 'transparent',
+    start: { dateTime: Utilities.formatDate(debut, CONFIG.fuseau, "yyyy-MM-dd'T'HH:mm:ss"), timeZone: CONFIG.fuseau },
+    end: { dateTime: Utilities.formatDate(fin, CONFIG.fuseau, "yyyy-MM-dd'T'HH:mm:ss"), timeZone: CONFIG.fuseau } };
+  var nb = 1;
+  if (d.repeter) {
+    var jusqu = String(d.jusqu || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(jusqu) || jusqu < jour) throw erreurUtilisateur_('jusqu', 'Date de fin de répétition invalide.');
+    var finSerie = dateParis_(jusqu, '23:59');
+    if (finSerie - debut > 366 * 86400e3) throw erreurUtilisateur_('jusqu', 'La répétition ne peut pas dépasser un an.');
+    ev.recurrence = ['RRULE:FREQ=WEEKLY;UNTIL=' + Utilities.formatDate(finSerie, 'UTC', "yyyyMMdd'T'HHmmss'Z'")];
+    nb = Math.floor((finSerie - debut) / (7 * 86400e3)) + 1;
+  }
+  Calendar.Events.insert(ev, CONFIG.agendaDispos);
+  return { ok: true, nb: nb };
+}
+
+function adminDispoRetirer_(d) {
+  var portee = d.portee === 'suivantes' ? 'suivantes' : 'une';
+  return avecVerrou_(function () {
+    var ev;
+    try { ev = Calendar.Events.get(CONFIG.agendaDispos, String(d.id || '')); } catch (e) { ev = null; }
+    if (!ev || ev.status === 'cancelled' || !ev.start || !ev.start.dateTime) throw erreurUtilisateur_('introuvable', 'Créneau introuvable : rechargez la page.');
+    var a = Date.parse(ev.start.dateTime), b = Date.parse(ev.end.dateTime);
+    if (portee === 'une' || !ev.recurringEventId) {
+      var bloque = seancesSur_(a, b);
+      if (bloque.length) throw erreurUtilisateur_('reservee', 'Une séance est réservée sur ce créneau (' + libelleDate_(new Date(Date.parse(bloque[0].start.dateTime)), 'fr') + '). Annulez-la d\'abord dans « Séances à venir ».');
+      Calendar.Events.remove(CONFIG.agendaDispos, ev.id);
+      return { ok: true, retires: 1 };
+    }
+    // Cette date et les suivantes : la série s'arrête la veille de cette date.
+    var master = Calendar.Events.get(CONFIG.agendaDispos, ev.recurringEventId);
+    var suite = listerEvenements_(CONFIG.agendaDispos, new Date(a), new Date(a + 400 * 86400e3), null).filter(function (x) {
+      return x.recurringEventId === ev.recurringEventId && x.status !== 'cancelled' && x.start && x.start.dateTime && Date.parse(x.start.dateTime) >= a;
+    });
+    for (var i = 0; i < suite.length; i++) {
+      var bl = seancesSur_(Date.parse(suite[i].start.dateTime), Date.parse(suite[i].end.dateTime));
+      if (bl.length) throw erreurUtilisateur_('reservee', 'Une séance est réservée sur un de ces créneaux (' + libelleDate_(new Date(Date.parse(bl[0].start.dateTime)), 'fr') + '). Annulez-la d\'abord dans « Séances à venir », ou retirez seulement les autres dates.');
+    }
+    if (Date.parse(master.start.dateTime) >= a) {
+      Calendar.Events.remove(CONFIG.agendaDispos, master.id);
+    } else {
+      var until = 'UNTIL=' + Utilities.formatDate(new Date(a - 1000), 'UTC', "yyyyMMdd'T'HHmmss'Z'");
+      var rec = (master.recurrence || []).map(function (r) {
+        if (!/^RRULE:/.test(r)) return r;
+        r = r.replace(/;?(UNTIL|COUNT)=[^;]*/g, '');
+        return r + ';' + until;
+      });
+      Calendar.Events.patch({ recurrence: rec }, CONFIG.agendaDispos, master.id);
+    }
+    return { ok: true, retires: suite.length };
   });
 }
 

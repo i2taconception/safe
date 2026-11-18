@@ -96,7 +96,7 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 - Pack : vaut pour la part de la personne qui réserve ; le déplacement éventuel se règle en espèces.
 - Pack payé en espèces (18/11) : payé en une fois, enregistré par SAFE dans la page de gestion ; le client reçoit son code par e-mail comme pour un achat PayPal.
 - Remboursements PayPal automatiques (18/11, `CONFIG.remboursementAuto: true`) : client qui annule plus de 24 h avant, participant qui se désinscrit, séance annulée par SAFE (remboursement total). PayPal garde ses frais ; remboursement possible 180 jours au plus après le paiement.
-- **Page de gestion** `/gestion/` (18/11) : protégée par le code `ADMIN_CODE` (propriété du script, 10 caractères au moins, jamais dans le dépôt), vérifié par le script ; 5 codes faux : blocage 1 h et e-mail à SAFE. Le code n'est gardé qu'en mémoire dans la page. Contenu : séances à venir (participants, paiements, tapis), « Annuler cette séance » (message aux participants, remboursement total, pack recrédité, créneau libéré, « ANNULÉ PAR SAFE » dans l'agenda), enregistrer un pack payé en espèces, liste des packs. Ne jamais supprimer une séance directement dans l'agenda : le client ne serait ni prévenu ni remboursé.
+- **Page de gestion** `/gestion/` (18/11) : protégée par le code `ADMIN_CODE` (propriété du script, 10 caractères au moins, jamais dans le dépôt), vérifié par le script ; 5 codes faux : blocage 1 h et e-mail à SAFE. Le code n'est gardé qu'en mémoire dans la page. Contenu : **disponibilités** (18/11 : ouvrir un créneau à une date, chez le client et/ou en ligne, répété chaque semaine jusqu'à une date ; liste par jour des créneaux ouverts sur 90 jours avec le nombre de séances réservées dessus ; retirer une date ou cette date et les suivantes, refusé si une séance confirmée est dessus ; écrit dans l'agenda « Disponibilités SAFE » avec les titres « Dispo », « Dispo domicile », « Dispo en ligne »), séances à venir (participants, paiements, tapis), « Annuler cette séance » (message aux participants, remboursement total, pack recrédité, créneau libéré, « ANNULÉ PAR SAFE » dans l'agenda), enregistrer un pack payé en espèces, liste des packs. Ne jamais supprimer une séance directement dans l'agenda : le client ne serait ni prévenu ni remboursé.
 
 ### Mise en service (compte safeinfocontact@gmail.com)
 1. Google Agenda : créer « Disponibilités SAFE » et « Réservations SAFE » (partager le second avec Adrien). Noter l'ID de chacun (Paramètres > Intégrer l'agenda).
@@ -105,9 +105,9 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 4. Exécuter `verifierConfiguration` (autoriser), lire le journal, puis une fois `installerDeclencheurs`.
 5. Déployer > Application Web, exécuter en tant que Moi, accès Tout le monde. Copier l'URL `/exec` dans `assets/js/config.js` (`apiReservation`). Après chaque modification : Gérer les déploiements > Nouvelle version.
 6. (Abandonné le 18/11, pour mémoire) PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
-7. Ouvrir des créneaux : événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
+7. Ouvrir des créneaux : section « Disponibilités » de la page `/gestion/`, ou directement des événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
 
-Tests : `node outils/tests/tests.mjs` (24 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
+Tests : `node outils/tests/tests.mjs` (25 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
 
 ## 7. SEO
 
@@ -117,6 +117,7 @@ DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:
 
 ## 8. Journal
 
+- **18/11/2026** : section « Disponibilités » dans la page de gestion (ouvrir, répéter chaque semaine, retirer une date ou la suite) ; simulateur : événements répétés. Tests : 25. HTTPS forcé sur GitHub Pages.
 - **18/11/2026** : domaine safewellbeing.fr acheté chez OVH ; adresses du site, sitemap, robots, page 404 et `CONFIG.urlSite` passés sur https://safewellbeing.fr/, fichier `CNAME`.
 - **18/11/2026** : battement selon la zone (en ligne 0, Marseille 30 min, hors Marseille 1 h) ; réduction première séance vérifiée par prénom + nom + e-mail, e-mail demandé aux participants qui cochent la case. Tests : 24.
 - **18/11/2026** : séances en ligne réglées avant la séance par PayPal seulement (adresse dans l'e-mail de confirmation, depuis la propriété `PAIEMENT_PAYPAL` ; RIB écarté) ; annulation à temps : e-mail « À VÉRIFIER » à SAFE pour rembourser un paiement déjà reçu. Tests : 23.

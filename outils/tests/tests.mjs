@@ -362,4 +362,51 @@ test('séance en ligne : paiement PayPal avant la séance, adresse dans l\'e-mai
   assert.match(sim.emails.find(m => m.to === 'zoe@exemple.fr').htmlBody, /nous vous remboursons/);
 });
 
+test('gestion : disponibilités ajoutées, répétées chaque semaine, retirées (une date ou la suite)', () => {
+  const sim = creerSimulateur(); // agenda des dispos vide
+  sim.proprietes.set('ADMIN_CODE', 'lotus-rose-2026');
+  const C = 'lotus-rose-2026', j = n => jourParis(new Date(), n);
+  const libres = (format = 'domicile') => sim.get({ action: 'creneaux', format, duree: '60', debut: j(0), fin: j(40) }).jours;
+  assert.equal(libres().length, 0);
+  // Contrôles
+  assert.equal(sim.post({ action: 'admin_dispo_ajouter', code: C, date: j(3), de: '10:00', a: '10:30', type: 'tous' }).code, 'heure');
+  assert.equal(sim.post({ action: 'admin_dispo_ajouter', code: C, date: j(3), de: '10:00', a: '12:00', type: 'autre' }).code, 'type');
+  assert.equal(sim.post({ action: 'admin_dispo_ajouter', code: C, date: j(-3), de: '10:00', a: '12:00', type: 'tous' }).code, 'date');
+  assert.equal(sim.post({ action: 'admin_dispo_ajouter', code: 'faux', date: j(3), de: '10:00', a: '12:00', type: 'tous' }).code, 'code');
+  // Une date seule, en ligne uniquement
+  assert.equal(sim.post({ action: 'admin_dispo_ajouter', code: C, date: j(3), de: '18:00', a: '20:00', type: 'enligne' }).ok, true);
+  assert.equal(libres('enligne').length, 1); assert.equal(libres('domicile').length, 0);
+  // Répétée chaque semaine pendant 4 semaines, domicile
+  const r = sim.post({ action: 'admin_dispo_ajouter', code: C, date: j(2), de: '09:00', a: '12:00', type: 'domicile', repeter: true, jusqu: j(23) });
+  assert.equal(r.ok, true); assert.equal(r.nb, 4);
+  assert.deepEqual(libres('domicile').map(x => x.date), [j(2), j(9), j(16), j(23)]);
+  assert.equal(libres('domicile')[0].creneaux[0].heure, '09:00');
+  let liste = sim.post({ action: 'admin_liste', code: C }).dispos;
+  assert.equal(liste.length, 5);
+  const serie = liste.filter(x => x.serie);
+  assert.equal(serie.length, 4); assert.equal(serie[0].type, 'domicile'); assert.equal(serie[0].de, '09:00'); assert.equal(serie[0].a, '12:00');
+  assert.equal(serie[0].regle.hebdo, true); assert.equal(serie[0].regle.jusqu, j(23));
+  // Retirer une seule date de la série
+  assert.equal(sim.post({ action: 'admin_dispo_retirer', code: C, id: serie[1].id, portee: 'une' }).ok, true);
+  assert.deepEqual(libres('domicile').map(x => x.date), [j(2), j(16), j(23)]);
+  // Une séance réservée bloque le retrait de son créneau
+  const debutResa = libres('domicile')[1].creneaux[0].debut;
+  const resa = sim.post({ action: 'reserver', lang: 'fr', format: 'domicile', duree: 60, tapis: 1, debut: debutResa,
+    adresse: { rue: '12 rue Paradis', cp: '13006', ville: 'Marseille' }, participants: [part('Léa', 'femme')],
+    client: { nom: 'Martin', email: 'lea@exemple.fr', tel: '06 12 34 56 78' }, sante: '', consentSante: false, cgv: true, piege: '' });
+  assert.equal(resa.ok, true);
+  liste = sim.post({ action: 'admin_liste', code: C }).dispos.filter(x => x.serie);
+  assert.equal(liste.find(x => x.jour === j(16)).reservees, 1);
+  assert.equal(sim.post({ action: 'admin_dispo_retirer', code: C, id: liste.find(x => x.jour === j(16)).id, portee: 'une' }).code, 'reservee');
+  assert.equal(sim.post({ action: 'admin_dispo_retirer', code: C, id: liste[0].id, portee: 'suivantes' }).code, 'reservee');
+  // Cette date et les suivantes, à partir de la dernière : la série s'arrête avant
+  assert.equal(sim.post({ action: 'admin_dispo_retirer', code: C, id: liste.find(x => x.jour === j(23)).id, portee: 'suivantes' }).ok, true);
+  assert.deepEqual(libres('domicile').map(x => x.date), [j(2), j(16)]); // j(23) retiré, j(16) garde un créneau après la séance
+  assert.equal(sim.post({ action: 'admin_liste', code: C }).dispos.filter(x => x.serie).length, 2);
+  // Retirer la date seule en ligne
+  const seule = sim.post({ action: 'admin_liste', code: C }).dispos.find(x => !x.serie);
+  assert.equal(sim.post({ action: 'admin_dispo_retirer', code: C, id: seule.id }).ok, true);
+  assert.equal(libres('enligne').length, 0);
+});
+
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ', des échecs ci-dessus' : ''));
