@@ -8,7 +8,7 @@ const debut = jourParis(new Date(), 0), fin = jourParis(new Date(), 20);
 function preparer() { const sim = creerSimulateur(); remplirDemo(sim); return sim; }
 const creneau = (sim, format, duree, n = 1, k = 0) =>
   sim.get({ action: 'creneaux', format, duree: String(duree), debut, fin }).jours[n].creneaux[k].debut;
-const part = (prenom, sexe, x = {}) => ({ prenom, sexe, premiere: false, charte: true, paiement: 'especes', email: '', ...x });
+const part = (prenom, sexe, x = {}) => ({ prenom, nom: 'Martin', sexe, premiere: false, charte: true, paiement: 'especes', email: '', ...x });
 function demande(sim, x = {}) {
   return {
     action: 'reserver', lang: 'fr', format: 'domicile', duree: 60, tapis: 1,
@@ -90,7 +90,7 @@ test('réservation à 3 à Aix : prix serveur, événement, e-mails, santé hors
   assert.match(e.summary, /Yoga · Léa Martin · 3 pers\. \(domicile\)/);
   assert.equal(q.sante, 'Genou droit fragile');
   assert.ok(!e.description.includes('Genou'), 'pas de santé dans l\'agenda partagé');
-  assert.match(e.description, /Tom \(H\) : lien de paiement envoyé, 26,67 €/);
+  assert.match(e.description, /Tom Martin \(H\) : lien de paiement envoyé, 26,67 €/);
   assert.equal(JSON.parse(q.p0).a, 21.66);
   // e-mails : enseignante, personne qui réserve, Tom (Inès n'a pas d'e-mail)
   assert.deepEqual(sim.emails.map(m => m.to), ['safe@test.fr', 'lea@exemple.fr', 'tom@exemple.fr']);
@@ -126,6 +126,26 @@ test('réduction première séance refusée pour un e-mail qui a déjà réserv�
   assert.equal(r.code, 'premiere');
 });
 
+test('réduction première séance : chaque participant est vérifié par prénom et nom', () => {
+  const sim = preparer();
+  assert.equal(sim.post(demande(sim, { participants: [part('Léa', 'femme'), part('Tom', 'homme')] })).ok, true);
+  // Tom revient avec une autre personne qui réserve : sa « première séance » est refusée (accents et casse ignorés)
+  const r = sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' },
+    participants: [part('Zoé', 'femme', { premiere: true, nom: 'Durand' }), part('TOM', 'homme', { premiere: true, nom: 'martin' })] }));
+  assert.equal(r.code, 'premiere');
+  assert.match(r.message, /TOM martin/);
+  // sans la case pour Tom, la réservation passe et Zoé garde sa réduction
+  const ok = sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' },
+    participants: [part('Zoé', 'femme', { premiere: true, nom: 'Durand' }), part('Tom', 'homme')] }));
+  assert.equal(ok.ok, true);
+});
+
+test('participants : nom obligatoire, sexe femme ou homme uniquement', () => {
+  const sim = preparer();
+  assert.equal(sim.post(demande(sim, { participants: [part('Léa', 'femme', { nom: '' })] })).code, 'participants');
+  assert.equal(sim.post(demande(sim, { participants: [part('Léa', 'autre')] })).code, 'participants');
+});
+
 test('PayPal : la personne qui réserve paie sa part, capture, puis un participant paie par son lien', () => {
   const sim = preparer();
   const d = demande(sim, { action: 'paypal_creer', participants: [part('Léa', 'femme', { paiement: 'enligne' }), part('Tom', 'homme', { paiement: 'lien', email: 'tom@exemple.fr' })] });
@@ -145,7 +165,7 @@ test('PayPal : la personne qui réserve paie sa part, capture, puis un participa
   const v2 = sim.post({ action: 'paypal_valider_part', orderID: c2.orderID });
   assert.equal(v2.ok, true, JSON.stringify(v2));
   assert.equal(JSON.parse(sim.agendas.resas[0].extendedProperties.private.p1).t, 'paye');
-  assert.match(sim.agendas.resas[0].description, /Tom \(H\) : payé en ligne 25 €/);
+  assert.match(sim.agendas.resas[0].description, /Tom Martin \(H\) : payé en ligne 25 €/);
   assert.equal(sim.post({ action: 'paypal_creer_part', id: q.resaId, p: 1, cle: tom.k }).code, 'part');
 });
 
@@ -212,7 +232,7 @@ test('désinscription d\'un participant : il ne paie rien, les autres gardent le
   assert.equal(apres.statut, 'confirmee');
   assert.equal(JSON.parse(apres.p1).t, 'annule');
   assert.equal(JSON.parse(apres.p0).a, 20, 'prix de Léa inchangé');
-  assert.match(sim.agendas.resas[0].description, /Tom \(H\) : annulé/);
+  assert.match(sim.agendas.resas[0].description, /Tom Martin \(H\) : annulé/);
   assert.deepEqual(sim.emails.map(m => m.to), ['safe@test.fr', 'lea@exemple.fr', 'tom@exemple.fr']);
   assert.ok(r.ok);
 });
@@ -224,6 +244,7 @@ test('réserver à nouveau : données de pré-remplissage avec la seule clé de 
   const r = sim.get({ action: 'reprise', id: q.resaId, cle: q.cle });
   assert.equal(r.reprise.client.email, 'lea@exemple.fr');
   assert.equal(r.reprise.participants[1].prenom, 'Tom');
+  assert.equal(r.reprise.participants[1].nom, 'Martin');
   assert.equal(r.reprise.sante, 'Dos');
   assert.equal(sim.get({ action: 'reprise', id: q.resaId, cle: JSON.parse(q.p1).k }).code, 'lien');
 });

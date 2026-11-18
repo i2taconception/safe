@@ -66,7 +66,7 @@ var LIBELLES = {
   domicile: { fr: 'Chez vous', en: 'At your home' },
   enligne: { fr: 'En ligne (visio)', en: 'Online (video call)' },
   taille: { 1: { fr: 'seul', en: 'alone' }, 2: { fr: 'à 2', en: 'for 2' }, 3: { fr: 'de 3 à 6', en: '3 to 6 people' } },
-  sexe: { femme: 'F', homme: 'H', autre: 'autre' }
+  sexe: { femme: 'F', homme: 'H' }
 };
 
 // ============================================================
@@ -302,7 +302,8 @@ function validerDemande_(d) {
   var lang = d.lang === 'en' ? 'en' : 'fr';
 
   var c = d.client || {};
-  var client = { nom: propre_(c.nom, 60), email: propre_(c.email, 120).toLowerCase(), tel: propre_(c.tel, 30) };
+  var p0 = (Array.isArray(d.participants) && d.participants[0]) || {};
+  var client = { nom: propre_(c.nom || p0.nom, 60), email: propre_(c.email, 120).toLowerCase(), tel: propre_(c.tel, 30) };
   if (!client.nom) throw erreurUtilisateur_('client', 'Nom obligatoire.');
   if (!EMAIL_RE.test(client.email)) throw erreurUtilisateur_('email', 'Adresse e-mail invalide.');
   if (client.tel.replace(/\D/g, '').length < 9) throw erreurUtilisateur_('tel', 'Numéro de téléphone invalide.');
@@ -311,9 +312,9 @@ function validerDemande_(d) {
   var max = format === 'enligne' ? 1 : CATALOGUE.maxPersonnes;
   if (liste.length < 1 || liste.length > max) throw erreurUtilisateur_('participants', 'Nombre de personnes invalide.');
   var participants = liste.map(function (p, i) {
-    var x = { prenom: propre_(p.prenom, 40), sexe: String(p.sexe || ''), premiere: p.premiere === true,
+    var x = { prenom: propre_(p.prenom, 40), nom: propre_(p.nom, 60), sexe: String(p.sexe || ''), premiere: p.premiere === true,
               mode: String(p.paiement || ''), email: i ? propre_(p.email, 120).toLowerCase() : client.email };
-    if (!x.prenom) throw erreurUtilisateur_('participants', 'Prénom obligatoire pour chaque participant.');
+    if (!x.prenom || !x.nom) throw erreurUtilisateur_('participants', 'Prénom et nom obligatoires pour chaque participant.');
     if (!LIBELLES.sexe[x.sexe]) throw erreurUtilisateur_('participants', 'Sexe obligatoire pour chaque participant.');
     if (p.charte !== true) throw erreurUtilisateur_('charte', 'Chaque participant doit accepter la charte de séance.');
     var modes = i === 0 ? ['enligne', 'especes', 'pack'] : ['lien', 'especes'];
@@ -354,12 +355,35 @@ function validerDemande_(d) {
 }
 
 /** Réduction première séance : refusée si l'e-mail de la personne qui réserve a déjà réservé. */
+/**
+ * Réduction première séance : refusée si la personne (même prénom et nom, ou même e-mail) a déjà
+ * une séance passée ou à venir non annulée. Chaque réservation enregistre pour chaque participant
+ * une empreinte du nom (pn_…) et de l'e-mail (pe_…) dans les propriétés privées de l'événement.
+ */
+function empreinte_(prefixe, texte) {
+  var t = String(texte || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9@.]+/g, ' ').trim();
+  if (!t) return '';
+  var h = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, t);
+  return prefixe + Utilities.base64EncodeWebSafe(h).replace(/[^A-Za-z0-9]/g, '').slice(0, 16);
+}
+function empreintesParticipant_(x) {
+  var l = [empreinte_('pn_', x.prenom + ' ' + x.nom)];
+  if (x.email) l.push(empreinte_('pe_', x.email));
+  return l.filter(Boolean);
+}
 function verifierPremiere_(dem) {
-  if (!dem.participants[0].premiere) return;
   var tMin = new Date(Date.now() - 3 * 365 * 86400e3), tMax = new Date(Date.now() + 400 * 86400e3);
-  var deja = listerEvenements_(CONFIG.agendaReservations, tMin, tMax, 'email=' + dem.client.email)
-    .some(function (ev) { return ev.extendedProperties.private.statut === 'confirmee' || Date.parse(ev.start.dateTime) < Date.now(); });
-  if (deja) throw erreurUtilisateur_('premiere', 'Cette adresse e-mail a déjà réservé une séance : la réduction première séance ne s\'applique pas. Décochez-la pour continuer.');
+  function compte(ev) { return ev.extendedProperties.private.statut === 'confirmee' || Date.parse(ev.start.dateTime) < Date.now(); }
+  dem.participants.forEach(function (x, i) {
+    if (!x.premiere) return;
+    var cles = empreintesParticipant_(x);
+    if (i === 0) cles.push('email=' + dem.client.email);
+    var deja = cles.some(function (k) {
+      var filtre = k.indexOf('=') > 0 ? k : k + '=1';
+      return listerEvenements_(CONFIG.agendaReservations, tMin, tMax, filtre).some(compte);
+    });
+    if (deja) throw erreurUtilisateur_('premiere', x.prenom + ' ' + x.nom + ' a déjà réservé une séance chez SAFE\u00a0: la réduction première séance ne s\'applique pas. Décochez «\u00a0Première séance\u00a0» pour cette personne.');
+  });
 }
 
 function creneauEncoreLibre_(dem) {
@@ -410,7 +434,7 @@ function creerEvenement_(dem, captureId) {
     var statut = 'a_regler';
     if (i === 0 && captureId) statut = 'paye';
     else if (parts[i] === 0) statut = 'sans_objet';
-    return { n: x.prenom, s: x.sexe, r: x.premiere ? 1 : 0, m: x.mode, t: statut, e: x.email, k: jeton_(32), c: i === 0 && captureId ? captureId : '', a: parts[i] };
+    return { n: x.prenom + ' ' + x.nom, f: x.prenom, o: x.nom, s: x.sexe, r: x.premiere ? 1 : 0, m: x.mode, t: statut, e: x.email, k: jeton_(32), c: i === 0 && captureId ? captureId : '', a: parts[i] };
   });
   var resa = { id: id, cle: cle, participants: ps };
   var priv = {
@@ -420,11 +444,12 @@ function creerEvenement_(dem, captureId) {
     pack: dem.pack ? dem.pack.code : '', sante: dem.sante, rappel: 'non'
   };
   ps.forEach(function (x, i) { priv['p' + i] = JSON.stringify(x); });
+  dem.participants.forEach(function (x) { empreintesParticipant_(x).forEach(function (k) { priv[k] = '1'; }); });
   if (dem.adresse) { priv.rue = dem.adresse.rue; priv.cp = dem.adresse.cp; priv.ville = dem.adresse.ville; }
 
   var lieu = dem.adresse ? dem.adresse.rue + ', ' + dem.adresse.cp + ' ' + dem.adresse.ville : '';
   var ressource = {
-    summary: 'Yoga · ' + dem.participants[0].prenom + ' ' + dem.client.nom + (ps.length > 1 ? ' · ' + ps.length + ' pers.' : '') +
+    summary: 'Yoga · ' + dem.participants[0].prenom + ' ' + dem.participants[0].nom + (ps.length > 1 ? ' · ' + ps.length + ' pers.' : '') +
              (dem.format === 'domicile' ? ' (domicile)' : ' (visio)'),
     description: descriptionAgenda_(dem, ps, id),
     start: { dateTime: dem.debut.toISOString(), timeZone: CONFIG.fuseau },
@@ -587,7 +612,7 @@ function trouverPart_(id, p, cle) {
 function lirePart_(id, p, cle) {
   var t = trouverPart_(id, p, cle), debut = Date.parse(t.ev.start.dateTime);
   var payable = t.priv.statut === 'confirmee' && t.x.m === 'lien' && t.x.t === 'a_regler' && debut - Date.now() > CONFIG.preavisHeures * 3600e3;
-  return { ok: true, part: { prenom: t.x.n, montant: t.x.a, statut: t.x.t, mode: t.x.m, payable: payable,
+  return { ok: true, part: { prenom: t.x.f || t.x.n, montant: t.x.a, statut: t.x.t, mode: t.x.m, payable: payable,
     duree: Number(t.priv.duree), format: t.priv.format, debut: new Date(debut).toISOString(), statutSeance: t.priv.statut } };
 }
 
@@ -616,8 +641,8 @@ function paypalValiderPart_(d) {
       body: t.x.n + ' a payé sa part en ligne (' + euros_(t.x.a) + ', PayPal ' + e.capture.id + ') pour la séance du ' + libelleDate_(debut, 'fr') + '.\n\n' + (t.ev.description || '') });
     var lang = t.priv.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang];
     if (t.x.e) MailApp.sendEmail({ to: t.x.e, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetPartPayee,
-      htmlBody: gabaritEmail_(tx.sujetPartPayee, '<p>' + echapper_(tx.bonjour(t.x.n)) + '</p><p>' + tx.partPayee(euros_(t.x.a), libelleDate_(debut, lang)) + '</p>', lang) });
-    return { ok: true, part: { prenom: t.x.n, montant: t.x.a, statut: 'paye' } };
+      htmlBody: gabaritEmail_(tx.sujetPartPayee, '<p>' + echapper_(tx.bonjour(t.x.f || t.x.n)) + '</p><p>' + tx.partPayee(euros_(t.x.a), libelleDate_(debut, lang)) + '</p>', lang) });
+    return { ok: true, part: { prenom: t.x.f || t.x.n, montant: t.x.a, statut: 'paye' } };
   });
 }
 
@@ -746,7 +771,7 @@ function lireReservation_(id, cle, p) {
   if (t.i !== null && t.x.t === 'annule' || t.i !== null && t.x.t === 'rembourse') statut = 'annulee';
   return { ok: true, reservation: {
     id: id, statut: statut, duree: Number(t.priv.duree), format: t.priv.format, personnes: Number(t.priv.nb),
-    debut: new Date(debut).toISOString(), participant: t.i !== null, prenom: t.i !== null ? t.x.n : '',
+    debut: new Date(debut).toISOString(), participant: t.i !== null, prenom: t.i !== null ? (t.x.f || t.x.n) : '',
     dansLesDelais: debut - Date.now() >= CONFIG.annulationHeures * 3600e3,
     annulable: statut === 'confirmee' && debut > Date.now() } };
 }
@@ -754,7 +779,7 @@ function lireReservation_(id, cle, p) {
 /** Données pour pré-remplir le formulaire (lien « Réserver à nouveau » de la personne qui réserve). */
 function lireReprise_(id, cle) {
   var t = identifier_(id, cle, null), q = t.priv, ps = [];
-  for (var i = 0; i < Number(q.nb); i++) { var x = JSON.parse(q['p' + i]); ps.push({ prenom: x.n, sexe: x.s, email: i ? x.e : '' }); }
+  for (var i = 0; i < Number(q.nb); i++) { var x = JSON.parse(q['p' + i]); ps.push({ prenom: x.f || x.n, nom: x.o || '', sexe: x.s, email: i ? x.e : '' }); }
   return { ok: true, reprise: {
     format: q.format, duree: Number(q.duree), tapis: Number(q.tapis || 0), participants: ps,
     adresse: q.format === 'domicile' ? { rue: q.rue || '', cp: q.cp || '', ville: q.ville || '' } : null,
@@ -802,7 +827,7 @@ function annuler_(d) {
       var y = JSON.parse(q['p' + j]);
       if (!y.e || y.t === 'annule') continue;
       MailApp.sendEmail({ to: y.e, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulation,
-        htmlBody: gabaritEmail_(tx.titreAnnulation, '<p>' + echapper_(tx.bonjour(y.n)) + '</p><p>' + tx.corpsAnnulationGroupe(qd) + '</p>' +
+        htmlBody: gabaritEmail_(tx.titreAnnulation, '<p>' + echapper_(tx.bonjour(y.f || y.n)) + '</p><p>' + tx.corpsAnnulationGroupe(qd) + '</p>' +
           (y.t === 'paye' || y.t === 'rembourse' ? '<p>' + (dansLesDelais ? tx.rembourse : tx.nonRembourse(CONFIG.annulationHeures)) + '</p>' : ''), lang) });
     }
     return { ok: true, rembourse: dansLesDelais && (aRembourser.length + rembourses.length) > 0 };
@@ -856,7 +881,7 @@ var TEXTES = {
     sujetConfirmation: 'Votre séance SAFE est confirmée', titreConfirmation: 'Votre séance est confirmée',
     bonjour: function (p) { return 'Bonjour ' + p + ','; },
     intro: 'Merci pour votre réservation. Voici le récapitulatif :',
-    quand: 'Date', duree: 'Séance', lieu: 'Lieu', participants: 'Participants', tapis: 'Tapis apportés', deplacement: 'Déplacement', total: 'Total', votrePart: 'Votre part',
+    quand: 'Date', duree: 'Séance', lieu: 'Lieu', participants: 'Participants', tapis: 'Tapis apportés par SAFE', deplacement: 'Déplacement', total: 'Total', votrePart: 'Votre part',
     gratuit: 'gratuit', visio: 'Lien de la visio', visioPlusTard: 'Le lien de la visio vous sera envoyé avant la séance.',
     liensEnvoyes: 'Les participants qui paient en ligne reçoivent leur lien de paiement par e-mail. Sans paiement 24 h avant la séance, leur part se règle en espèces.',
     annuler: function (h) { return 'Besoin d\'annuler ? Annulation gratuite jusqu\'à ' + h + ' h avant la séance :'; },
@@ -887,7 +912,7 @@ var TEXTES = {
     sujetConfirmation: 'Your SAFE session is confirmed', titreConfirmation: 'Your session is confirmed',
     bonjour: function (p) { return 'Hello ' + p + ','; },
     intro: 'Thank you for your booking. Here is a summary:',
-    quand: 'Date', duree: 'Session', lieu: 'Place', participants: 'Participants', tapis: 'Mats brought', deplacement: 'Travel', total: 'Total', votrePart: 'Your share',
+    quand: 'Date', duree: 'Session', lieu: 'Place', participants: 'Participants', tapis: 'Mats brought by SAFE', deplacement: 'Travel', total: 'Total', votrePart: 'Your share',
     gratuit: 'free', visio: 'Video call link', visioPlusTard: 'The video call link will be sent to you before the session.',
     liensEnvoyes: 'Participants paying online receive their payment link by email. Without payment 24 hours before the session, their share is paid in cash.',
     annuler: function (h) { return 'Need to cancel? Free cancellation up to ' + h + ' hours before the session:'; },
@@ -1020,7 +1045,7 @@ function notifier_(resa, dem) {
   for (var i = 1; i < resa.participants.length; i++) {
     var x = resa.participants[i];
     if (!x.e) continue;
-    var h = '<p>' + echapper_(t.bonjour(x.n)) + '</p><p>' + echapper_(t.corpsInvitation(p0.prenom, libelleDate_(dem.debut, dem.lang), dem.duree)) + '</p>' +
+    var h = '<p>' + echapper_(t.bonjour(x.f || x.n)) + '</p><p>' + echapper_(t.corpsInvitation(p0.prenom, libelleDate_(dem.debut, dem.lang), dem.duree)) + '</p>' +
       '<p>' + echapper_(t.votrePart) + ' : <strong>' + euros_(x.a) + '</strong></p>';
     if (x.m === 'lien' && x.a > 0) h += '<p><a style="display:inline-block;background:#742834;color:#FBF3E6;padding:12px 20px;border-radius:999px;text-decoration:none" href="' +
       lienSite_(dem.lang, { payer: resa.id, p: i, cle: x.k }) + '">' + t.payerEnLigne + '</a></p><p>' + t.ouEspeces(CONFIG.preavisHeures) + '</p>';
@@ -1053,7 +1078,7 @@ function envoyerRappels() {
       if (!dest) continue;
       var lien = i === 0 ? lienSite_(lang, { annulation: q.resaId, cle: q.cle }) : lienSite_(lang, { annulation: q.resaId, cle: x.k, p: i });
       MailApp.sendEmail({ to: dest, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: t.sujetRappel,
-        htmlBody: gabaritEmail_(t.titreRappel, '<p>' + echapper_(t.bonjour(x.n)) + '</p>' + corps + extra +
+        htmlBody: gabaritEmail_(t.titreRappel, '<p>' + echapper_(t.bonjour(x.f || x.n)) + '</p>' + corps + extra +
           '<p><a style="color:#742834" href="' + lien + '">' + (i === 0 ? t.lienAnnuler : t.seDesinscrire) + '</a></p>', lang) });
     }
     q.rappel = 'oui';

@@ -91,35 +91,46 @@
 
 <section class="lotus" aria-label="The SAFE lotus">
   <div class="lotus-scene">
-    <div class="lotus-textes">
-      <div class="lotus-texte actif" data-phase="intro">
+    <div class="lotus-panneau">
+      <div class="lotus-intro" data-phase="intro">
         <h1>SAFE</h1>
         <p class="sous-titre">Yoga · Coaching · Listening &amp; advice</p>
         <p class="discret">Yoga at your home in Marseille, Aix and Aubagne, or online.</p>
       </div>
-      <div class="lotus-texte" data-phase="yoga" aria-hidden="true">
+      <ol class="lotus-chapitres">
+      <li class="lotus-ch" data-phase="yoga">
+        <span class="lotus-num">01 / 04</span>
         <p class="label">The body</p>
         <h2>SAFE Yoga</h2>
         <p>Hatha, Vinyasa or Yin yoga, guided breathing, meditation, relaxation and stretching.</p>
-      </div>
-      <div class="lotus-texte" data-phase="mind" aria-hidden="true">
+        
+        <span class="lotus-part">The outer petals</span>
+      </li>
+      <li class="lotus-ch" data-phase="mind">
+        <span class="lotus-num">02 / 04</span>
         <p class="label">The mind</p>
         <h2>SAFE Mind</h2>
         <p>Coaching and stress management: understand your needs better and find resources for everyday life.</p>
         <span class="pastille-dev">Coming soon</span>
-      </div>
-      <div class="lotus-texte" data-phase="care" aria-hidden="true">
+        <span class="lotus-part">The middle petals</span>
+      </li>
+      <li class="lotus-ch" data-phase="care">
+        <span class="lotus-num">03 / 04</span>
         <p class="label">The human</p>
         <h2>SAFE Care</h2>
         <p>A space for kind listening and practical advice for everyday life (sleep, routine, breathing).</p>
         <span class="pastille-dev">Coming soon</span>
-      </div>
-      <div class="lotus-texte" data-phase="balance" aria-hidden="true">
+        <span class="lotus-part">The heart of the flower</span>
+      </li>
+      <li class="lotus-ch" data-phase="balance">
+        <span class="lotus-num">04 / 04</span>
         <p class="label">All three together</p>
         <h2>SAFE Balance</h2>
         <p>A path bringing together body, mind and the human side.</p>
         <span class="pastille-dev">Coming soon</span>
-      </div>
+        <span class="lotus-part">The whole flower</span>
+      </li>
+      </ol>
     </div>
     <div class="lotus-fleur" aria-hidden="true">
       <img data-couche="feuille" src="../assets/img/lotus/feuille.webp" alt="" width="1200" height="820">
@@ -127,7 +138,9 @@
       <img data-couche="mid" src="../assets/img/lotus/mid.webp" alt="" width="1200" height="820">
       <img data-couche="coeur" src="../assets/img/lotus/coeur.webp" alt="" width="1200" height="820">
       <img data-couche="int" src="../assets/img/lotus/int.webp" alt="" width="1200" height="820">
+      <span class="lotus-etiquette" data-pour="yoga"><b>01</b> Yoga</span><span class="lotus-etiquette" data-pour="mind"><b>02</b> Mind</span><span class="lotus-etiquette" data-pour="care"><b>03</b> Care</span>
     </div>
+    <nav class="lotus-rail" aria-label="SAFE offers"><button type="button" data-aller="yoga" aria-label="Go to SAFE Yoga"><i></i><span>Yoga</span></button><button type="button" data-aller="mind" aria-label="Go to SAFE Mind"><i></i><span>Mind</span></button><button type="button" data-aller="care" aria-label="Go to SAFE Care"><i></i><span>Care</span></button><button type="button" data-aller="balance" aria-label="Go to SAFE Balance"><i></i><span>Balance</span></button></nav>
     <p class="lotus-indice" aria-hidden="true">Scroll to open the lotus</p>
   </div>
 </section>

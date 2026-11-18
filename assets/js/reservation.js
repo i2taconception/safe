@@ -29,8 +29,7 @@
       personnes: function (n) { return n + (n > 1 ? ' personnes' : ' personne'); },
       moins: 'Une personne de moins', plus: 'Une personne de plus',
       participant: function (i) { return i === 0 ? 'Vous (la personne qui réserve)' : 'Participant ' + (i + 1); },
-      prenom: 'Prénom', sexe: 'Sexe', femme: 'Femme', homme: 'Homme', autre: 'Autre',
-      sexeAide: 'Demandé pour la sécurité de l\'enseignante, qui travaille seule.',
+      prenom: 'Prénom', nomP: 'Nom', sexe: 'Sexe', femme: 'Femme', homme: 'Homme',
       premiere: 'Première séance chez SAFE (5 € de réduction)',
       adresse: 'Adresse', cp: 'Code postal', ville: 'Ville', calculer: 'Calculer le déplacement',
       calcul: 'Calcul du trajet…', adresseAide: 'L\'adresse exacte, pour calculer le trajet depuis Marseille 9e.',
@@ -39,7 +38,8 @@
       tropLoin: 'Cette adresse est au-delà de notre zone (Aix-en-Provence, Aubagne et alentours). Écrivez-nous pour un devis :',
       introuvable: 'Adresse introuvable. Vérifiez-la (numéro, rue, code postal) et réessayez.',
       min: 'min', parPers: '/ pers.',
-      tapis: 'Combien de tapis devons-nous apporter ?', tapisAide: 'Gratuit. Choisissez 0 si chacun a le sien.',
+      tapis: 'Combien de tapis avez-vous ?', tapisAide: 'Nous apportons gratuitement ceux qui manquent.',
+      tapisApportes: function (n) { return n ? 'Nous apporterons ' + n + ' tapis.' : 'Chacun a son tapis : nous n\'en apportons pas.'; },
       precedent: 'Semaines précédentes', suivant: 'Semaines suivantes',
       periode: function (a, b) { return 'Du ' + a + ' au ' + b; },
       aucunJour: 'Aucun créneau libre sur ces deux semaines. Regardez les semaines suivantes.',
@@ -65,7 +65,7 @@
       simuler: 'Simuler le paiement en ligne', paypalChargement: 'Chargement du paiement sécurisé…',
       paypalIndispo: 'Le paiement en ligne est momentanément indisponible. Choisissez un autre mode ou réessayez plus tard.',
       recap: 'Votre séance', recapVide: 'Choisissez où se passe la séance pour commencer.',
-      rLieu: 'Lieu', rPers: 'Personnes', rDuree: 'Durée', rDate: 'Date', rHeure: 'Heure', rTapis: 'Tapis apportés',
+      rLieu: 'Lieu', rPers: 'Personnes', rDuree: 'Durée', rDate: 'Date', rHeure: 'Heure', rTapis: 'Tapis apportés par SAFE',
       lSeance: function (n, p) { return n + ' × ' + p + ' €'; }, lPremiere: function (n) { return 'Première séance (' + n + ' × −5 €)'; },
       lDeplacement: 'Déplacement', gratuit: 'gratuit', total: 'Total', votrePart: 'Votre part',
       recapNote: 'Annulation gratuite jusqu\'à 24 h avant la séance.',
@@ -109,8 +109,7 @@
       personnes: function (n) { return n + (n > 1 ? ' people' : ' person'); },
       moins: 'One person less', plus: 'One person more',
       participant: function (i) { return i === 0 ? 'You (the person booking)' : 'Participant ' + (i + 1); },
-      prenom: 'First name', sexe: 'Sex', femme: 'Female', homme: 'Male', autre: 'Other',
-      sexeAide: 'Asked for the safety of the teacher, who works alone.',
+      prenom: 'First name', nomP: 'Last name', sexe: 'Sex', femme: 'Female', homme: 'Male',
       premiere: 'First session with SAFE (€5 off)',
       adresse: 'Address', cp: 'Postcode', ville: 'City', calculer: 'Calculate travel cost',
       calcul: 'Calculating the route…', adresseAide: 'The exact address, to calculate the route from Marseille 9th district.',
@@ -119,7 +118,8 @@
       tropLoin: 'This address is beyond our area (Aix-en-Provence, Aubagne and around). Write to us for a quote:',
       introuvable: 'Address not found. Please check it (number, street, postcode) and try again.',
       min: 'min', parPers: '/ person',
-      tapis: 'How many mats should we bring?', tapisAide: 'Free. Choose 0 if everyone has their own.',
+      tapis: 'How many mats do you have?', tapisAide: 'We bring the missing ones free of charge.',
+      tapisApportes: function (n) { return n ? 'We will bring ' + n + (n > 1 ? ' mats.' : ' mat.') : 'Everyone has a mat: we will not bring any.'; },
       precedent: 'Previous weeks', suivant: 'Next weeks',
       periode: function (a, b) { return a + ' to ' + b; },
       aucunJour: 'No free slot in these two weeks. Have a look at the next weeks.',
@@ -145,7 +145,7 @@
       simuler: 'Simulate online payment', paypalChargement: 'Loading secure payment…',
       paypalIndispo: 'Online payment is temporarily unavailable. Choose another option or try again later.',
       recap: 'Your session', recapVide: 'Choose where the session takes place to start.',
-      rLieu: 'Place', rPers: 'People', rDuree: 'Duration', rDate: 'Date', rHeure: 'Time', rTapis: 'Mats brought',
+      rLieu: 'Place', rPers: 'People', rDuree: 'Duration', rDate: 'Date', rHeure: 'Time', rTapis: 'Mats brought by SAFE',
       lSeance: function (n, p) { return n + ' × €' + p; }, lPremiere: function (n) { return 'First session (' + n + ' × −€5)'; },
       lDeplacement: 'Travel', gratuit: 'free', total: 'Total', votrePart: 'Your share',
       recapNote: 'Free cancellation up to 24 hours before the session.',
@@ -189,9 +189,9 @@
     refus_carte: 'The payment method was declined. Please try another one.', lien: 'This link is invalid.',
     passee: 'This session has already taken place.', paypal: 'Payment not found or expired. Please start again.',
     serveur: 'Something went wrong. Please try again or contact us directly.',
-    pack: 'Unknown, expired or non-matching pack code for this email address.', premiere: 'This email address has already booked: the first-session discount does not apply. Untick it to continue.',
+    pack: 'Unknown, expired or non-matching pack code for this email address.', premiere: 'One of the participants has already booked with SAFE: the first-session discount does not apply. Untick "First session" for this person.',
     montant: 'The price has changed. Please reload the page and start again.', part: 'This share can no longer be paid online: please pay in cash on the day.',
-    participants: 'First name and sex are required for every participant.', paiement: 'Invalid payment option.', tapis: 'Invalid number of mats.'
+    participants: 'First name, last name and sex are required for every participant.', paiement: 'Invalid payment option.', tapis: 'Invalid number of mats.'
   };
   function messageErreur(r) {
     if (LANG === 'en') return ERREURS_EN[r.code] || ERREURS_EN.serveur;
@@ -272,7 +272,7 @@
       rep = { ok: true, part: { prenom: 'Tom', montant: 25, statut: 'a_regler', mode: 'lien', payable: true, duree: 60, format: 'domicile',
         debut: new Date(Date.now() + 3 * 86400e3).toISOString(), statutSeance: 'confirmee' } };
     } else if (action === 'reprise') {
-      rep = { ok: true, reprise: { format: 'domicile', duree: 60, tapis: 1, participants: [{ prenom: 'Léa', sexe: 'femme', email: '' }, { prenom: 'Tom', sexe: 'homme', email: 'tom@exemple.fr' }],
+      rep = { ok: true, reprise: { format: 'domicile', duree: 60, tapis: 1, participants: [{ prenom: 'Léa', nom: 'Martin', sexe: 'femme', email: '' }, { prenom: 'Tom', nom: 'Martin', sexe: 'homme', email: 'tom@exemple.fr' }],
         adresse: { rue: '12 rue Paradis', cp: '13006', ville: 'Marseille' }, client: { nom: 'Martin', email: 'lea@exemple.fr', tel: '06 12 34 56 78' }, sante: '' } };
     } else if (action === 'paypal_valider_pack') {
       rep = { ok: true, pack: { code: 'SAFE-DEMO01', restant: 11, total: 11, expire: new Date(Date.now() + 365 * 86400e3).toISOString() } };
@@ -295,8 +295,8 @@
   var ORDRE = ['format', 'personnes', 'adresse', 'duree', 'tapis', 'creneau', 'sante', 'paiement'];
   var etat = {
     config: null, format: null, nb: 1,
-    participants: [{ prenom: '', sexe: '', premiere: false, charte: false, mode: 'enligne', email: '' }],
-    adresse: { rue: '', cp: '', ville: '' }, deplacement: null, duree: null, tapis: 0,
+    participants: [{ prenom: '', nom: '', sexe: '', premiere: false, charte: false, mode: 'enligne', email: '' }],
+    adresse: { rue: '', cp: '', ville: '' }, deplacement: null, duree: null, tapis: 1, tapisPerso: 0,
     fenetre: aujourdhui(), jours: null, jour: null, creneau: null,
     sante: '', consentSante: false, client: { nom: '', email: '', tel: '' }, cgv: false, envoi: false, packCode: ''
   };
@@ -393,7 +393,7 @@
       { valeur: 'enligne', titre: TXT.enligne, detail: esc(TXT.enligneAide) }
     ], etat.format, function (v) {
       etat.format = v; etat.creneau = null; etat.duree = null;
-      if (v === 'enligne') { etat.nb = 1; etat.tapis = 0; }
+      if (v === 'enligne') { etat.nb = 1; etat.tapis = 0; } else majTapis();
       cacherApres('format'); etapePersonnes(true); recap();
     }));
     numeroter();
@@ -425,8 +425,8 @@
   }
   function changerNb(d) {
     etat.nb = Math.max(1, Math.min(etat.config.catalogue.maxPersonnes, etat.nb + d));
-    while (etat.participants.length < etat.nb) etat.participants.push({ prenom: '', sexe: '', premiere: false, charte: false, mode: 'especes', email: '' });
-    if (etat.tapis > etat.nb) etat.tapis = etat.nb;
+    while (etat.participants.length < etat.nb) etat.participants.push({ prenom: '', nom: '', sexe: '', premiere: false, charte: false, mode: 'especes', email: '' });
+    majTapis();
     etapePersonnes(false);
     annoncer(TXT.personnes(etat.nb));
     recap();
@@ -436,16 +436,17 @@
     if (!document.getElementById('e-sante').hidden) etapeSante(false);
   }
   function blocParticipant(i) {
-    var p = etat.participants[i], dom = true; // sexe demandé à domicile et en ligne (décision du 17/11)
+    var p = etat.participants[i];
     var b = el('<fieldset class="participant" style="border:0;margin:0;padding:.8rem 0 0"><legend class="titre-p">' + esc(TXT.participant(i)) + '</legend>' +
       '<div class="champ"><label for="p' + i + '-prenom">' + TXT.prenom + '</label><input id="p' + i + '-prenom" autocomplete="' + (i ? 'off' : 'given-name') + '" required aria-required="true" value="' + esc(p.prenom) + '"></div>' +
-      (dom ? '<div class="champ"><label for="p' + i + '-sexe">' + TXT.sexe + '</label><select id="p' + i + '-sexe" required aria-required="true"' + (i ? '' : ' aria-describedby="aide-sexe"') + '><option value="">' + (LANG === 'en' ? 'Choose' : 'Choisir') + '</option>' +
-        ['femme', 'homme', 'autre'].map(function (s) { return '<option value="' + s + '"' + (p.sexe === s ? ' selected' : '') + '>' + TXT[s] + '</option>'; }).join('') + '</select>' +
-        (i ? '' : '<span class="aide" id="aide-sexe">' + TXT.sexeAide + '</span>') + '</div>' : '') +
+      '<div class="champ"><label for="p' + i + '-nom">' + TXT.nomP + '</label><input id="p' + i + '-nom" autocomplete="' + (i ? 'off' : 'family-name') + '" required aria-required="true" value="' + esc(p.nom || '') + '"></div>' +
+      '<div class="champ"><label for="p' + i + '-sexe">' + TXT.sexe + '</label><select id="p' + i + '-sexe" required aria-required="true"><option value="">' + (LANG === 'en' ? 'Choose' : 'Choisir') + '</option>' +
+        ['femme', 'homme'].map(function (s) { return '<option value="' + s + '"' + (p.sexe === s ? ' selected' : '') + '>' + TXT[s] + '</option>'; }).join('') + '</select></div>' +
       '<div class="case" style="grid-column:1/-1;margin:0"><input type="checkbox" id="p' + i + '-premiere"' + (p.premiere ? ' checked' : '') + '><label for="p' + i + '-premiere">' + TXT.premiere + '</label></div>' +
       '</fieldset>');
     b.querySelector('#p' + i + '-prenom').addEventListener('input', function (e) { p.prenom = e.target.value; recap(); });
-    if (dom) b.querySelector('#p' + i + '-sexe').addEventListener('change', function (e) { p.sexe = e.target.value; });
+    b.querySelector('#p' + i + '-nom').addEventListener('input', function (e) { p.nom = e.target.value; if (!i) etat.client.nom = e.target.value; });
+    b.querySelector('#p' + i + '-sexe').addEventListener('change', function (e) { p.sexe = e.target.value; });
     b.querySelector('#p' + i + '-premiere').addEventListener('change', function (e) { p.premiere = e.target.checked; recap(); });
     return b;
   }
@@ -464,6 +465,8 @@
     for (var i = 0; i < etat.nb; i++) {
       var pr = document.getElementById('p' + i + '-prenom');
       if (erreurChamp(pr, pr.value.trim() ? '' : TXT.champRequis) && !premier) premier = pr;
+      var nm = document.getElementById('p' + i + '-nom');
+      if (erreurChamp(nm, nm.value.trim() ? '' : TXT.champRequis) && !premier) premier = nm;
       var sx = document.getElementById('p' + i + '-sexe');
       if (sx && erreurChamp(sx, sx.value ? '' : TXT.champRequis) && !premier) premier = sx;
     }
@@ -535,15 +538,23 @@
   // ------------------------------------------------------------------ 5. Tapis
   function etapeTapisSeul(focus) {
     var c = corps('tapis'); c.innerHTML = '';
-    var max = Math.min(etat.nb, etat.config.catalogue.maxTapis);
-    var opts = []; for (var i = 0; i <= max; i++) opts.push({ valeur: i, titre: String(i) });
-    c.appendChild(el('<p class="petit discret" id="aide-tapis">' + TXT.tapis + ' ' + TXT.tapisAide + '</p>'));
-    var g = groupeRadio('tapis', opts, etat.tapis, function (v) { etat.tapis = Number(v); recap(); }, 'aide-tapis');
+    var opts = []; for (var i = 0; i <= etat.nb; i++) opts.push({ valeur: i, titre: String(i) });
+    c.appendChild(el('<p class="titre-p" id="aide-tapis" style="font-weight:650;margin:0 0 .3rem">' + TXT.tapis + '</p>'));
+    c.appendChild(el('<p class="petit discret" style="margin:0 0 .6rem">' + TXT.tapisAide + '</p>'));
+    var info = el('<p class="petit" role="status" style="margin:.7rem 0 0"></p>');
+    var g = groupeRadio('tapis', opts, etat.tapisPerso, function (v) { etat.tapisPerso = Number(v); majTapis(); info.textContent = TXT.tapisApportes(etat.tapis); recap(); }, 'aide-tapis');
     g.style.gridTemplateColumns = 'repeat(auto-fill,minmax(4.5rem,1fr))';
     c.appendChild(g);
+    majTapis(); info.textContent = TXT.tapisApportes(etat.tapis);
+    c.appendChild(info);
     montrer('tapis', focus);
   }
   function etapeTapis(focus) { etapeTapisSeul(focus); etapeCreneau(false); }
+  // Tapis à apporter = participants qui n'en ont pas (6 au plus).
+  function majTapis() {
+    if (etat.tapisPerso > etat.nb) etat.tapisPerso = etat.nb;
+    etat.tapis = etat.format === 'enligne' ? 0 : Math.min(etat.config ? etat.config.catalogue.maxTapis : 6, Math.max(0, etat.nb - etat.tapisPerso));
+  }
 
   // ------------------------------------------------------------------ 6. Créneau
   function etapeCreneau(focus) { montrer('creneau', focus); chargerCreneaux(); }
@@ -640,11 +651,10 @@
     var c = corps('paiement'); c.innerHTML = '';
     var cl = etat.client, m = calcul();
     var f = el('<form id="f-coord" novalidate><div class="grille-champs">' +
-      '<div class="champ"><label for="c-nom">' + TXT.nom + '</label><input id="c-nom" autocomplete="family-name" required aria-required="true" value="' + esc(cl.nom) + '"></div>' +
       '<div class="champ"><label for="c-tel">' + TXT.tel + '</label><input id="c-tel" type="tel" inputmode="tel" autocomplete="tel" required aria-required="true" aria-describedby="c-tel-aide" value="' + esc(cl.tel) + '"><span class="aide" id="c-tel-aide">' + TXT.telAide + '</span></div>' +
       '<div class="champ large"><label for="c-email">' + TXT.email + '</label><input id="c-email" type="email" autocomplete="email" required aria-required="true" aria-describedby="c-email-aide" value="' + esc(cl.email) + '"><span class="aide" id="c-email-aide">' + TXT.emailAide + '</span></div>' +
       '</div><div class="piege" aria-hidden="true"><label for="c-site">Site web</label><input id="c-site" tabindex="-1" autocomplete="off"></div></form>');
-    f.addEventListener('input', function () { cl.nom = f.querySelector('#c-nom').value; cl.tel = f.querySelector('#c-tel').value; cl.email = f.querySelector('#c-email').value; });
+    f.addEventListener('input', function () { cl.tel = f.querySelector('#c-tel').value; cl.email = f.querySelector('#c-email').value; });
     f.addEventListener('submit', function (e) { e.preventDefault(); });
     c.appendChild(f);
 
@@ -687,8 +697,7 @@
   function valider() {
     var premier = null;
     function verifier(input, m) { if (erreurChamp(input, m) && !premier) premier = input; }
-    var nom = document.getElementById('c-nom'), tel = document.getElementById('c-tel'), email = document.getElementById('c-email');
-    verifier(nom, nom.value.trim() ? '' : TXT.champRequis);
+    var tel = document.getElementById('c-tel'), email = document.getElementById('c-email');
     verifier(tel, !tel.value.trim() ? TXT.champRequis : (tel.value.replace(/\D/g, '').length < 9 ? TXT.telInvalide : ''));
     verifier(email, !email.value.trim() ? TXT.champRequis : (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim()) ? '' : TXT.emailInvalide));
     var cpk = document.getElementById('c-pack');
@@ -713,10 +722,10 @@
       format: etat.format, duree: etat.duree, debut: etat.creneau.debut, tapis: etat.tapis,
       adresse: etat.format === 'domicile' ? { rue: etat.adresse.rue.trim(), cp: etat.adresse.cp.trim(), ville: etat.adresse.ville.trim() } : null,
       participants: etat.participants.slice(0, etat.nb).map(function (p, i) {
-        return { prenom: p.prenom.trim(), sexe: p.sexe, premiere: !!p.premiere, charte: !!p.charte,
+        return { prenom: p.prenom.trim(), nom: (p.nom || '').trim(), sexe: p.sexe, premiere: !!p.premiere, charte: !!p.charte,
           paiement: p.mode, email: i ? (p.mode === 'lien' ? p.email.trim() : '') : etat.client.email.trim() };
       }),
-      client: { nom: etat.client.nom.trim(), email: etat.client.email.trim(), tel: etat.client.tel.trim() },
+      client: { nom: (etat.participants[0].nom || '').trim(), email: etat.client.email.trim(), tel: etat.client.tel.trim() },
       sante: etat.sante.trim() && etat.consentSante ? etat.sante.trim() : '', consentSante: !!(etat.sante.trim() && etat.consentSante),
       cgv: etat.cgv, montantAttendu: calcul().total, pack: etat.participants[0].mode === 'pack' ? etat.packCode.trim().toUpperCase() : '',
       piege: (document.getElementById('c-site') || {}).value || ''
@@ -795,7 +804,7 @@
     if (!etat.format) { a.innerHTML = '<h2 id="titre-recap">' + TXT.recap + '</h2><p>' + TXT.recapVide + '</p>'; return; }
     var lignes = [[TXT.rLieu, etat.format === 'domicile' ? TXT.domicile : TXT.enligne], [TXT.rPers, TXT.personnes(etat.nb)]];
     if (etat.duree) lignes.push([TXT.rDuree, etat.duree + ' ' + TXT.min]);
-    if (etat.format === 'domicile' && etat.tapis) lignes.push([TXT.rTapis, String(etat.tapis)]);
+    if (etat.format === 'domicile' && etat.duree) lignes.push([TXT.rTapis, String(etat.tapis)]);
     if (etat.creneau) {
       lignes.push([TXT.rDate, fmtInstant(etat.creneau.debut, { weekday: 'long', day: 'numeric', month: 'long' })]);
       lignes.push([TXT.rHeure, etat.creneau.heure]);
@@ -986,9 +995,9 @@
 
   // ------------------------------------------------------------------ Réserver à nouveau (pré-remplissage)
   function appliquerReprise(r) {
-    etat.format = r.format; etat.duree = r.duree; etat.nb = r.participants.length; etat.tapis = r.tapis || 0;
+    etat.format = r.format; etat.duree = r.duree; etat.nb = r.participants.length; etat.tapisPerso = Math.max(0, etat.nb - (r.tapis || 0)); majTapis();
     etat.participants = r.participants.map(function (x, i) {
-      return { prenom: x.prenom, sexe: x.sexe, premiere: false, charte: false, mode: i ? (x.email && enLignePossible() ? 'lien' : 'especes') : (enLignePossible() ? 'enligne' : 'especes'), email: x.email || '' };
+      return { prenom: x.prenom, nom: x.nom || (i ? '' : r.client.nom), sexe: x.sexe === 'homme' || x.sexe === 'femme' ? x.sexe : '', premiere: false, charte: false, mode: i ? (x.email && enLignePossible() ? 'lien' : 'especes') : (enLignePossible() ? 'enligne' : 'especes'), email: x.email || '' };
     });
     if (r.adresse) etat.adresse = r.adresse;
     etat.client = { nom: r.client.nom, email: r.client.email, tel: r.client.tel };

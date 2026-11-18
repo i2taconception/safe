@@ -53,7 +53,7 @@ Fiche de référence du site. Toute session (Claude ou humaine) la lit avant de 
 
 - Polices (dans `assets/fonts`, licence OFL) : **Marcellus** (titres), **Tenor Sans** (étiquettes en capitales espacées, boutons), **Figtree** (texte).
 - Ambiance : planche d'inspiration Asie tropicale et Bali (baie aux falaises, jardin, bassin, lotus, orchidée, matcha, lumière dorée). Fond clair.
-- **Élément signature** : le lotus éclaté en ouverture de l'accueil (`.lotus`, `assets/js/site.js`). 5 couches (`assets/img/lotus/` : feuille, ext, mid, coeur, int) qui s'écartent au défilement ; chaque phase présente une offre (Yoga, Mind, Care) puis la fleur se referme sur Balance. Arrêt complet si l'appareil demande moins d'animations.
+- **Élément signature** : le lotus éclaté en ouverture de l'accueil (`.lotus`, `assets/js/site.js`), sur le modèle de la vue éclatée d'I2TA (refait le 18/11). Texte à gauche numéroté « 01 / 04 » à « 04 / 04 », fleur à droite : au défilement, elle se décompose en 3 parties posées côte à côte avec une étiquette chacune (01 Yoga = pétales extérieurs `ext`, 02 Mind = pétales du milieu `mid`, 03 Care = cœur `int` + `coeur`), la partie active ressort, puis la fleur se reforme sur 04 Balance. Barre de progression cliquable en bas (Yoga, Mind, Care, Balance). Réglages : `POSE` et `BORNES` dans site.js. Arrêt complet si l'appareil demande moins d'animations.
 - Logos : `assets/img/logo.svg` (en-tête), `logo-clair.svg` (pied de page), `favicon.svg`/`favicon.ico`. Logo photo complet : `SAFE-logo.jpg` (kDrive). Image de partage : `assets/img/og-safe.jpg`.
 - À faire : tigre original discret en décor ; photos de jardin balinais.
 
@@ -78,9 +78,12 @@ Modifier l'en-tête ou le pied de page : dans `generer_pages.py` ET dans les deu
 
 ## 6. Réservation
 
-Ordre du formulaire : lieu > participants (prénom, sexe, première séance) > adresse et calcul du déplacement > durée > tapis > créneau > charte et attestation (une case par participant), infos santé facultatives avec consentement > coordonnées et paiement (mode par participant) > confirmation.
+Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, première séance) > adresse et calcul du déplacement > durée > tapis > créneau > charte et attestation (une case par participant), infos santé facultatives avec consentement > coordonnées et paiement (mode par participant) > confirmation.
 
-- Sexe obligatoire pour chaque participant, à domicile et en ligne (17/11), finalité : sécurité de l'enseignante (écrite dans la politique de confidentialité).
+- Sexe obligatoire pour chaque participant, à domicile et en ligne (17/11), finalité : sécurité de l'enseignante (écrite dans la politique de confidentialité). Pas de texte d'explication sous le champ ; seulement Femme ou Homme (18/11).
+- Prénom et nom obligatoires pour chaque participant ; le nom de la personne qui réserve n'est plus redemandé dans les coordonnées (18/11).
+- Réduction première séance : refusée si un participant (même prénom et nom, accents et majuscules ignorés) ou l'e-mail de la personne qui réserve a déjà une séance non annulée. Empreintes `pn_…` (nom) et `pe_…` (e-mail) dans les propriétés privées de chaque réservation.
+- Tapis : on demande « Combien de tapis avez-vous ? » ; SAFE apporte ceux qui manquent (participants moins tapis déclarés, 6 au plus), affiché « Tapis à apporter » dans l'agenda et l'e-mail à SAFE.
 - Infos santé : facultatives, consentement explicite, supprimées 12 mois après la dernière séance.
 - Créneaux affichés dans le fuseau horaire du client.
 - Lien « Réserver à nouveau » dans l'e-mail de confirmation pour pré-remplir (jamais à partir du seul e-mail).
@@ -100,7 +103,7 @@ Ordre du formulaire : lieu > participants (prénom, sexe, première séance) > a
 6. PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
 7. Ouvrir des créneaux : événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
 
-Tests : `node outils/tests/tests.mjs` (17 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé).
+Tests : `node outils/tests/tests.mjs` (19 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé).
 
 ## 7. SEO
 
@@ -108,6 +111,7 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 
 ## 8. Journal
 
+- **18/11/2026** : lotus refait sur le modèle d'I2TA (numéros, étiquettes, barre de progression) ; réservation : prénom et nom par participant, sexe Femme/Homme sans texte d'aide, réduction première séance vérifiée pour chaque participant, question des tapis inversée. Tests du backend : 19.
 - **18/11/2026** : backend installé sur safeinfocontact@gmail.com (projet Apps Script « Réservations SAFE », agendas « Disponibilités SAFE » et « Réservations SAFE », propriété `ADRESSE_DEPART`, déclencheurs), déployé en application Web (version 1) et branché dans `config.js` : fin du mode démonstration. Paiement en espèces seulement tant que PayPal n'est pas configuré. Limite de déplacement portée à 45 km.
 - **17/11/2026** : dépôt `i2taconception/safe` créé, GitHub Pages activé (branche `main`, racine). Ancien dépôt `ihssane-yoga` supprimé.
 - **17/11/2026** : backend de réservation écrit (`apps-script/`) et testé hors ligne ; module de réservation complété (pack, paiement des parts, désinscription, réserver à nouveau). Reste : installation sur le compte Google, PayPal.

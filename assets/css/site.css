@@ -76,31 +76,59 @@ section{scroll-margin-top:5rem}
 }
 
 /* Lotus éclaté (ouverture de l'accueil) */
-.lotus{position:relative;height:300vh;min-height:2400px}
-.lotus-scene{position:sticky;top:4.2rem;height:calc(100vh - 4.2rem);min-height:560px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.lotus-textes{position:relative;width:100%;max-width:44rem;min-height:12.5rem;text-align:center;padding:0 1.5rem}
-.lotus-texte{position:absolute;inset:0;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s;pointer-events:none}
-.lotus-texte.actif{opacity:1;transform:none;pointer-events:auto}
-.lotus-texte h1{font-size:clamp(3.6rem,10vw,7rem);letter-spacing:.16em;margin:0}
-.lotus-texte h2{font-size:clamp(2.2rem,5vw,3rem);margin:.2rem 0 .5rem}
-.lotus-texte .sous-titre{font-family:var(--f-label);letter-spacing:.2em;text-transform:uppercase;color:var(--matcha);font-size:clamp(.8rem,1.6vw,1rem)}
-.lotus-texte p{font-size:1.1rem}
+.lotus{position:relative;height:420vh;min-height:3000px}
+.lotus-scene{position:sticky;top:4.2rem;height:calc(100vh - 4.2rem);min-height:560px;overflow:hidden;display:grid;grid-template-columns:minmax(18rem,26rem) minmax(0,1fr);align-items:center;gap:2rem;max-width:76rem;margin:0 auto;padding:0 2rem}
+.lotus-panneau{position:relative;height:24rem}
+.lotus-intro,.lotus-ch{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;opacity:0;transform:translateY(14px);transition:opacity .45s,transform .5s;pointer-events:none}
+.lotus-intro.actif,.lotus-ch.actif{opacity:1;transform:none;pointer-events:auto}
+.lotus-intro h1{font-size:clamp(3.6rem,8vw,6.2rem);letter-spacing:.16em;margin:0}
+.lotus-intro .sous-titre{font-family:var(--f-label);letter-spacing:.2em;text-transform:uppercase;color:var(--matcha);font-size:clamp(.8rem,1.4vw,.95rem)}
+.lotus-chapitres{list-style:none;margin:0;padding:0}
+.lotus-num{font:400 .95rem var(--f-label);letter-spacing:.14em;color:var(--rose);margin-bottom:.8rem}
+.lotus-ch h2{font-size:clamp(2.1rem,3.6vw,2.9rem);margin:.1rem 0 .6rem}
+.lotus-ch p{font-size:1.08rem;margin:0 0 .8rem}
+.lotus-ch .pastille-dev{align-self:flex-start}
+.lotus-part{margin-top:1rem;padding-top:.8rem;border-top:1px solid rgba(116,40,52,.18);font:400 .78rem var(--f-label);letter-spacing:.16em;text-transform:uppercase;color:var(--encre-2)}
 .pastille-dev{display:inline-block;margin-top:.3rem;padding:.35rem .9rem;border:1px solid var(--matcha);border-radius:999px;font:400 .75rem var(--f-label);letter-spacing:.18em;text-transform:uppercase;color:var(--matcha)}
-.lotus-fleur{position:relative;width:min(600px,86vw,calc((100vh - 20rem) * 1.46));aspect-ratio:1200/820;margin:2.5rem 0 3.5rem}
-.lotus-fleur img{position:absolute;inset:0;width:100%;height:100%;will-change:transform,opacity;transition:opacity .4s}
+.lotus-fleur{position:relative;width:100%;max-width:720px;aspect-ratio:1200/820;justify-self:center;max-height:calc(100vh - 12rem)}
+.lotus-fleur img{position:absolute;inset:0;width:100%;height:100%;will-change:transform,opacity;transition:opacity .35s}
+.lotus-etiquette{position:absolute;top:84%;transform:translate(-50%,0);white-space:nowrap;font:400 .82rem var(--f-label);letter-spacing:.16em;text-transform:uppercase;color:var(--encre-2);opacity:0;transition:color .3s;padding-top:.7rem;border-top:1px solid rgba(46,58,43,.25)}
+.lotus-etiquette b{font-weight:400;color:var(--rose);margin-right:.3rem}
+.lotus-etiquette.actif{color:var(--orchidee);border-top-color:var(--orchidee)}
+.lotus-rail{position:absolute;left:2rem;bottom:1.4rem;display:flex;gap:.6rem;opacity:0;transition:opacity .4s}
+.lotus-rail.visible{opacity:1}
+.lotus-rail button{background:none;border:0;padding:.4rem 0;cursor:pointer;display:flex;flex-direction:column;gap:.45rem;font:400 .72rem var(--f-label);letter-spacing:.16em;text-transform:uppercase;color:var(--encre-2);min-width:4.6rem;text-align:left}
+.lotus-rail button i{display:block;height:3px;border-radius:3px;background:rgba(46,58,43,.15);position:relative;overflow:hidden}
+.lotus-rail button i::after{content:"";position:absolute;inset:0;background:var(--orchidee);transform:scaleX(var(--remplissage,0));transform-origin:left}
+.lotus-rail button.actif{color:var(--orchidee)}
 .lotus-indice{transition:opacity .4s;position:absolute;bottom:1.2rem;left:0;right:0;text-align:center;font-size:.9rem;color:var(--encre-2)}
 .lotus-indice::after{content:"";display:block;width:1px;height:2rem;background:var(--matcha);margin:.5rem auto 0;animation:descend 2s ease-in-out infinite}
 @keyframes descend{0%,100%{transform:scaleY(.3);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}}
+@media (max-width:900px){
+  .lotus-scene{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start;gap:0;padding:1.2rem 1.2rem 4.5rem}
+  .lotus-panneau{height:15.5rem;order:0}
+  .lotus-intro h1{font-size:3.4rem}
+  .lotus-ch h2{font-size:2rem}
+  .lotus-ch p{font-size:1rem}
+  .lotus-part{display:none}
+  .lotus-fleur{max-height:none;align-self:center}
+  .lotus-etiquette{font-size:.66rem;letter-spacing:.1em}
+  .lotus-rail{left:1.2rem;right:1.2rem;justify-content:space-between}
+  .lotus-rail button{min-width:0;flex:1}
+  .lotus-indice{bottom:.6rem}
+}
 @media (prefers-reduced-motion:reduce){
   .lotus{height:auto;min-height:0}
-  .lotus-scene{position:static;height:auto;padding:3rem 0}
-  .lotus-texte{position:static;opacity:1;transform:none;margin-bottom:2rem}
-  .lotus-texte+.lotus-texte{display:none}
-  .lotus-indice{display:none}
+  .lotus-scene{position:static;height:auto;padding:3rem 2rem;grid-template-columns:1fr}
+  .lotus-panneau{height:auto}
+  .lotus-intro,.lotus-ch{position:static;opacity:1;transform:none;margin-bottom:2rem}
+  .lotus-indice,.lotus-rail,.lotus-etiquette{display:none}
 }
 .sans-js .lotus{height:auto;min-height:0}
-.sans-js .lotus-scene{position:static;height:auto;padding:3rem 0}
-.sans-js .lotus-texte{position:static;opacity:1;transform:none;margin-bottom:1.5rem}
+.sans-js .lotus-scene{position:static;height:auto;padding:3rem 2rem;grid-template-columns:1fr}
+.sans-js .lotus-panneau{height:auto}
+.sans-js .lotus-intro,.sans-js .lotus-ch{position:static;opacity:1;transform:none;margin-bottom:1.5rem}
+.sans-js .lotus-indice,.sans-js .lotus-rail,.sans-js .lotus-etiquette{display:none}
 
 /* Bandeau photo */
 .bandeau-photo{position:relative;min-height:34rem;display:flex;align-items:flex-end;color:#FBF3E6;overflow:hidden}
@@ -207,9 +235,10 @@ section{scroll-margin-top:5rem}
 .compteur button:disabled{opacity:.35;cursor:not-allowed}
 .compteur output{font:400 1.6rem var(--f-titre);min-width:2ch;text-align:center}
 .participants{display:grid;gap:.8rem;margin-top:1rem}
-.participant{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:.8rem;align-items:end;border-top:1px solid var(--trait);padding-top:.8rem}
+.participant{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.75fr);gap:.8rem;align-items:end;border-top:1px solid var(--trait);padding-top:.8rem}
 .participant .titre-p{grid-column:1/-1;font-weight:650;margin:0}
-@media (max-width:600px){.participant{grid-template-columns:1fr}}
+@media (max-width:700px){.participant{grid-template-columns:1fr 1fr}.participant .champ:nth-of-type(3){grid-column:1/-1}}
+@media (max-width:420px){.participant{grid-template-columns:1fr}}
 .pastilles{display:flex;flex-wrap:wrap;gap:.55rem}
 .pastille{border:1.5px solid var(--trait);background:#fff;border-radius:999px;padding:.55rem 1rem;font:600 .95rem var(--f-texte);color:var(--encre);cursor:pointer;font-variant-numeric:tabular-nums;min-height:44px}
 .pastille[aria-pressed="true"]{background:var(--orchidee);border-color:var(--orchidee);color:#fff}
