@@ -31,7 +31,7 @@ var CONFIG = {
   agendasOccupes: ['primary'],
 
   pasMinutes: 30,
-  battement: { domicile: 45, enligne: 10 }, // minutes libres avant et après (trajet, pause)
+  battement: { enligne: 0, marseille: 30, hors: 60 }, // minutes libres avant et après une séance (décision du 18/11)
   preavisHeures: 24,
   horizonJours: 60,
   annulationHeures: 24,
@@ -217,7 +217,7 @@ function creneauxDisponibles_(p) {
   if (tMax > limite) tMax = limite;
   if (tMin >= tMax) return { ok: true, jours: [] };
   var creneaux = calculerCreneaux(lireFenetres_(tMin, tMax), lireOccupations_(tMin, tMax), {
-    format: p.format, duree: duree, pas: CONFIG.pasMinutes, battement: CONFIG.battement[p.format] || 0,
+    format: p.format, duree: duree, pas: CONFIG.pasMinutes, battement: battementZone_(p.format, p.zone),
     debutMin: maintenant + CONFIG.preavisHeures * 3600e3
   });
   // Regroupement par jour de Paris ; le site les regroupe ensuite à l'heure du client.
@@ -231,8 +231,16 @@ function creneauxDisponibles_(p) {
   return { ok: true, jours: ordre.map(function (j) { return { date: j, creneaux: parJour[j] }; }) };
 }
 
+/** Battement en minutes : en ligne 0, à domicile dans Marseille 30, hors de Marseille 60 (zone inconnue : 60). */
+function battementZone_(format, zone) {
+  if (format === 'enligne') return CONFIG.battement.enligne;
+  return zone === 'marseille' ? CONFIG.battement.marseille : CONFIG.battement.hors;
+}
+
 /**
  * Calcul pur : débuts de créneaux (ms epoch).
+ * Autour de chaque occupation, l'écart gardé est le plus grand des deux battements (celui de la séance
+ * demandée et celui de la séance déjà réservée, si elle en porte un).
  * fenetres : [{debut, fin, formats: null | ['domicile'|'enligne']}] ; occupe : [{debut, fin}]
  */
 function calculerCreneaux(fenetres, occupe, o) {
@@ -243,8 +251,11 @@ function calculerCreneaux(fenetres, occupe, o) {
     var t = Math.ceil(f.debut / pasMs) * pasMs;
     for (; t + dureeMs <= f.fin; t += pasMs) {
       if (t < o.debutMin || vus[t]) continue;
-      var a = t - batMs, b = t + dureeMs + batMs, libre = true;
-      for (var i = 0; i < occupe.length; i++) if (occupe[i].debut < b && occupe[i].fin > a) { libre = false; break; }
+      var libre = true;
+      for (var i = 0; i < occupe.length; i++) {
+        var m = Math.max(batMs, (occupe[i].battement || 0) * 60e3);
+        if (occupe[i].debut < t + dureeMs + m && occupe[i].fin > t - m) { libre = false; break; }
+      }
       if (libre) { vus[t] = true; res.push(t); }
     }
   });
@@ -264,7 +275,7 @@ function lireFenetres_(tMin, tMax) {
 }
 
 function lireOccupations_(tMin, tMax) {
-  var ids = CONFIG.agendasOccupes.concat([CONFIG.agendaReservations]);
+  var ids = CONFIG.agendasOccupes.slice();
   var r = Calendar.Freebusy.query({ timeMin: tMin.toISOString(), timeMax: tMax.toISOString(), timeZone: CONFIG.fuseau,
     items: ids.map(function (id) { return { id: id }; }) });
   var res = [];
@@ -273,6 +284,14 @@ function lireOccupations_(tMin, tMax) {
     if (!c) return;
     if (c.errors && c.errors.length) throw new Error('Agenda illisible : ' + id);
     (c.busy || []).forEach(function (b) { res.push({ debut: Date.parse(b.start), fin: Date.parse(b.end) }); });
+  });
+  // Séances SAFE déjà réservées : chacune garde son propre battement (en ligne, Marseille, hors Marseille).
+  listerEvenements_(CONFIG.agendaReservations, tMin, tMax, null).forEach(function (ev) {
+    if (!ev.start || !ev.start.dateTime || ev.status === 'cancelled' || ev.transparency === 'transparent') return;
+    var q = (ev.extendedProperties && ev.extendedProperties.private) || null;
+    var bat;
+    if (q && q.resaId) bat = battementZone_(q.format, q.zone || (Number(q.km || 0) > 0 ? 'hors' : 'marseille'));
+    res.push({ debut: Date.parse(ev.start.dateTime), fin: Date.parse(ev.end.dateTime), battement: bat });
   });
   return res;
 }
@@ -324,6 +343,7 @@ function validerDemande_(d) {
     if (modes.indexOf(x.mode) < 0) throw erreurUtilisateur_('paiement', 'Mode de paiement invalide.');
     if (i > 0 && x.mode === 'lien' && !EMAIL_RE.test(x.email)) throw erreurUtilisateur_('email', 'Adresse e-mail du participant invalide.');
     if (i > 0 && x.mode !== 'lien') x.email = EMAIL_RE.test(x.email) ? x.email : '';
+    if (i > 0 && x.premiere && !x.email) throw erreurUtilisateur_('participants', 'E-mail obligatoire pour chaque participant qui demande la réduction première séance.');
     return x;
   });
   if (!CONFIG.paypal.clientId) participants.forEach(function (x) { if (x.mode === 'enligne' || x.mode === 'lien') throw erreurUtilisateur_('paiement', 'Le paiement en ligne n\'est pas disponible.'); });
@@ -359,33 +379,28 @@ function validerDemande_(d) {
 
 /** Réduction première séance : refusée si l'e-mail de la personne qui réserve a déjà réservé. */
 /**
- * Réduction première séance : refusée si la personne (même prénom et nom, ou même e-mail) a déjà
- * une séance passée ou à venir non annulée. Chaque réservation enregistre pour chaque participant
- * une empreinte du nom (pn_…) et de l'e-mail (pe_…) dans les propriétés privées de l'événement.
+ * Réduction première séance (décision du 18/11) : refusée seulement si la même personne, c'est-à-dire
+ * le même prénom, le même nom ET la même adresse e-mail, a déjà une séance passée ou à venir non annulée.
+ * Chaque réservation enregistre pour chaque participant qui a un e-mail une empreinte pq_… (prénom, nom, e-mail).
  */
 function empreinte_(prefixe, texte) {
-  var t = String(texte || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9@.]+/g, ' ').trim();
+  var t = String(texte || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9@.|]+/g, ' ').trim();
   if (!t) return '';
   var h = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, t);
   return prefixe + Utilities.base64EncodeWebSafe(h).replace(/[^A-Za-z0-9]/g, '').slice(0, 16);
 }
 function empreintesParticipant_(x) {
-  var l = [empreinte_('pn_', x.prenom + ' ' + x.nom)];
-  if (x.email) l.push(empreinte_('pe_', x.email));
-  return l.filter(Boolean);
+  return x.email ? [empreinte_('pq_', x.prenom + ' ' + x.nom + '|' + x.email)] : [];
 }
 function verifierPremiere_(dem) {
   var tMin = new Date(Date.now() - 3 * 365 * 86400e3), tMax = new Date(Date.now() + 400 * 86400e3);
   function compte(ev) { return ev.extendedProperties.private.statut === 'confirmee' || Date.parse(ev.start.dateTime) < Date.now(); }
-  dem.participants.forEach(function (x, i) {
+  dem.participants.forEach(function (x) {
     if (!x.premiere) return;
-    var cles = empreintesParticipant_(x);
-    if (i === 0) cles.push('email=' + dem.client.email);
-    var deja = cles.some(function (k) {
-      var filtre = k.indexOf('=') > 0 ? k : k + '=1';
-      return listerEvenements_(CONFIG.agendaReservations, tMin, tMax, filtre).some(compte);
+    var deja = empreintesParticipant_(x).some(function (k) {
+      return listerEvenements_(CONFIG.agendaReservations, tMin, tMax, k + '=1').some(compte);
     });
-    if (deja) throw erreurUtilisateur_('premiere', x.prenom + ' ' + x.nom + ' a déjà réservé une séance chez SAFE\u00a0: la réduction première séance ne s\'applique pas. Décochez «\u00a0Première séance\u00a0» pour cette personne.');
+    if (deja) throw erreurUtilisateur_('premiere', x.prenom + ' ' + x.nom + ' a déjà réservé une séance chez SAFE avec cette adresse e-mail\u00a0: la réduction première séance ne s\'applique pas. Décochez «\u00a0Première séance\u00a0» pour cette personne.');
   });
 }
 
@@ -393,7 +408,7 @@ function creneauEncoreLibre_(dem) {
   if (dem.debut.getTime() > Date.now() + CONFIG.horizonJours * 86400e3) return false;
   var tMin = new Date(dem.debut.getTime() - 12 * 3600e3), tMax = new Date(dem.fin.getTime() + 12 * 3600e3);
   var libres = calculerCreneaux(lireFenetres_(tMin, tMax), lireOccupations_(tMin, tMax), {
-    format: dem.format, duree: dem.duree, pas: CONFIG.pasMinutes, battement: CONFIG.battement[dem.format] || 0,
+    format: dem.format, duree: dem.duree, pas: CONFIG.pasMinutes, battement: battementZone_(dem.format, dem.deplacement && dem.deplacement.zone),
     debutMin: Date.now() + CONFIG.preavisHeures * 3600e3 });
   return libres.indexOf(dem.debut.getTime()) >= 0;
 }
@@ -444,7 +459,8 @@ function creerEvenement_(dem, captureId) {
     resaId: id, cle: cle, email: dem.client.email, nom: dem.client.nom, tel: dem.client.tel, lang: dem.lang, statut: 'confirmee',
     format: dem.format, duree: String(dem.duree), nb: String(ps.length), tapis: String(dem.tapis),
     dep: String(dem.montants.dep), km: String(dem.deplacement.km || 0), pp: String(dem.montants.pp),
-    pack: dem.pack ? dem.pack.code : '', sante: dem.sante, rappel: 'non'
+    pack: dem.pack ? dem.pack.code : '', sante: dem.sante, rappel: 'non',
+    zone: dem.format === 'domicile' ? dem.deplacement.zone : 'enligne'
   };
   ps.forEach(function (x, i) { priv['p' + i] = JSON.stringify(x); });
   dem.participants.forEach(function (x) { empreintesParticipant_(x).forEach(function (k) { priv[k] = '1'; }); });

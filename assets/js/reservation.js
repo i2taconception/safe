@@ -31,6 +31,7 @@
       participant: function (i) { return i === 0 ? 'Vous (la personne qui réserve)' : 'Participant ' + (i + 1); },
       prenom: 'Prénom', nomP: 'Nom', sexe: 'Sexe', femme: 'Femme', homme: 'Homme',
       premiere: 'Première séance chez SAFE (5 € de réduction)',
+      emailPremiere: function (n) { return 'E-mail de ' + n; }, emailPremiereAide: 'Pour vérifier la réduction première séance. Cette personne recevra aussi la confirmation.',
       adresse: 'Adresse', cp: 'Code postal', ville: 'Ville', calculer: 'Calculer le déplacement',
       calcul: 'Calcul du trajet…', adresseAide: 'L\'adresse exacte, pour calculer le trajet depuis Marseille 9e.',
       dansMarseille: 'Dans Marseille : déplacement gratuit.',
@@ -112,6 +113,7 @@
       participant: function (i) { return i === 0 ? 'You (the person booking)' : 'Participant ' + (i + 1); },
       prenom: 'First name', nomP: 'Last name', sexe: 'Sex', femme: 'Female', homme: 'Male',
       premiere: 'First session with SAFE (€5 off)',
+      emailPremiere: function (n) { return 'Email of ' + n; }, emailPremiereAide: 'To check the first-session discount. This person will also receive the confirmation.',
       adresse: 'Address', cp: 'Postcode', ville: 'City', calculer: 'Calculate travel cost',
       calcul: 'Calculating the route…', adresseAide: 'The exact address, to calculate the route from Marseille 9th district.',
       dansMarseille: 'Within Marseille: free travel.',
@@ -191,7 +193,7 @@
     refus_carte: 'The payment method was declined. Please try another one.', lien: 'This link is invalid.',
     passee: 'This session has already taken place.', paypal: 'Payment not found or expired. Please start again.',
     serveur: 'Something went wrong. Please try again or contact us directly.',
-    pack: 'Unknown, expired or non-matching pack code for this email address.', premiere: 'One of the participants has already booked with SAFE: the first-session discount does not apply. Untick "First session" for this person.',
+    pack: 'Unknown, expired or non-matching pack code for this email address.', premiere: 'One of the participants has already booked with SAFE with this email address: the first-session discount does not apply. Untick "First session" for this person.',
     montant: 'The price has changed. Please reload the page and start again.', part: 'This share can no longer be paid online: please pay in cash on the day.',
     participants: 'First name, last name and sex are required for every participant.', paiement: 'Invalid payment option.', tapis: 'Invalid number of mats.'
   };
@@ -445,11 +447,17 @@
       '<div class="champ"><label for="p' + i + '-sexe">' + TXT.sexe + '</label><select id="p' + i + '-sexe" required aria-required="true"><option value="">' + (LANG === 'en' ? 'Choose' : 'Choisir') + '</option>' +
         ['femme', 'homme'].map(function (s) { return '<option value="' + s + '"' + (p.sexe === s ? ' selected' : '') + '>' + TXT[s] + '</option>'; }).join('') + '</select></div>' +
       '<div class="case" style="grid-column:1/-1;margin:0"><input type="checkbox" id="p' + i + '-premiere"' + (p.premiere ? ' checked' : '') + '><label for="p' + i + '-premiere">' + TXT.premiere + '</label></div>' +
+      (i && p.premiere ? '<div class="champ" style="grid-column:1/-1"><label for="p' + i + '-emailp">' + esc(TXT.emailPremiere(p.prenom || TXT.participant(i))) + '</label><input id="p' + i + '-emailp" type="email" autocomplete="off" required aria-required="true" aria-describedby="p' + i + '-emailp-aide" value="' + esc(p.email || '') + '"><span class="aide" id="p' + i + '-emailp-aide">' + TXT.emailPremiereAide + '</span></div>' : '') +
       '</fieldset>');
     b.querySelector('#p' + i + '-prenom').addEventListener('input', function (e) { p.prenom = e.target.value; recap(); });
     b.querySelector('#p' + i + '-nom').addEventListener('input', function (e) { p.nom = e.target.value; if (!i) etat.client.nom = e.target.value; });
     b.querySelector('#p' + i + '-sexe').addEventListener('change', function (e) { p.sexe = e.target.value; });
-    b.querySelector('#p' + i + '-premiere').addEventListener('change', function (e) { p.premiere = e.target.checked; recap(); });
+    b.querySelector('#p' + i + '-premiere').addEventListener('change', function (e) {
+      p.premiere = e.target.checked; recap();
+      if (i) { etapePersonnes(false); var cb = document.getElementById('p' + i + '-premiere'); if (cb) cb.focus(); }
+    });
+    var em = b.querySelector('#p' + i + '-emailp');
+    if (em) em.addEventListener('input', function (e) { p.email = e.target.value; });
     return b;
   }
   function erreurChamp(input, msg) {
@@ -469,6 +477,8 @@
       if (erreurChamp(pr, pr.value.trim() ? '' : TXT.champRequis) && !premier) premier = pr;
       var nm = document.getElementById('p' + i + '-nom');
       if (erreurChamp(nm, nm.value.trim() ? '' : TXT.champRequis) && !premier) premier = nm;
+      var ep = document.getElementById('p' + i + '-emailp');
+      if (ep && erreurChamp(ep, !ep.value.trim() ? TXT.champRequis : (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(ep.value.trim()) ? '' : TXT.emailInvalide)) && !premier) premier = ep;
       var sx = document.getElementById('p' + i + '-sexe');
       if (sx && erreurChamp(sx, sx.value ? '' : TXT.champRequis) && !premier) premier = sx;
     }
@@ -564,9 +574,10 @@
     var c = corps('creneau');
     c.innerHTML = '<p class="chargement">' + TXT.chargement + '</p>';
     var debut = etat.fenetre, fin = plusJours(debut, JOURS_FENETRE - 1);
-    var demande = [etat.format, etat.duree, debut].join('|');
+    var zone = etat.format === 'domicile' && etat.deplacement ? etat.deplacement.zone : '';
+    var demande = [etat.format, etat.duree, debut, zone].join('|');
     etat.demande = demande;
-    get({ action: 'creneaux', format: etat.format, duree: etat.duree, debut: debut, fin: fin })
+    get({ action: 'creneaux', format: etat.format, duree: etat.duree, debut: debut, fin: fin, zone: zone })
       .then(function (r) { if (etat.demande !== demande) return; if (!r.ok) throw r; etat.jours = r.jours; dessinerCreneaux(debut, fin); })
       .catch(function () { c.innerHTML = '<p class="statut ko">' + TXT.erreurChargement + '</p>'; });
   }
@@ -729,7 +740,7 @@
       adresse: etat.format === 'domicile' ? { rue: etat.adresse.rue.trim(), cp: etat.adresse.cp.trim(), ville: etat.adresse.ville.trim() } : null,
       participants: etat.participants.slice(0, etat.nb).map(function (p, i) {
         return { prenom: p.prenom.trim(), nom: (p.nom || '').trim(), sexe: p.sexe, premiere: !!p.premiere, charte: !!p.charte,
-          paiement: p.mode, email: i ? (p.mode === 'lien' ? p.email.trim() : '') : etat.client.email.trim() };
+          paiement: p.mode, email: i ? (p.mode === 'lien' || p.premiere ? (p.email || '').trim() : '') : etat.client.email.trim() };
       }),
       client: { nom: (etat.participants[0].nom || '').trim(), email: etat.client.email.trim(), tel: etat.client.tel.trim() },
       sante: etat.sante.trim() && etat.consentSante ? etat.sante.trim() : '', consentSante: !!(etat.sante.trim() && etat.consentSante),

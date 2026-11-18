@@ -83,7 +83,7 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 
 - Sexe obligatoire pour chaque participant, à domicile et en ligne (17/11), finalité : sécurité de l'enseignante (écrite dans la politique de confidentialité). Pas de texte d'explication sous le champ ; seulement Femme ou Homme (18/11).
 - Prénom et nom obligatoires pour chaque participant ; le nom de la personne qui réserve n'est plus redemandé dans les coordonnées (18/11).
-- Réduction première séance : refusée si un participant (même prénom et nom, accents et majuscules ignorés) ou l'e-mail de la personne qui réserve a déjà une séance non annulée. Empreintes `pn_…` (nom) et `pe_…` (e-mail) dans les propriétés privées de chaque réservation.
+- Réduction première séance (18/11) : refusée seulement si la même personne (même prénom, même nom ET même e-mail, accents et majuscules ignorés) a déjà une séance non annulée ; deux homonymes avec des e-mails différents ne sont pas confondus. Un participant (autre que la personne qui réserve) qui coche « Première séance » doit donner son e-mail (champ qui apparaît alors) ; il reçoit aussi la confirmation. Empreinte `pq_…` (prénom, nom, e-mail) dans les propriétés privées de chaque réservation.
 - Tapis : on demande « Combien de tapis avez-vous ? » ; SAFE apporte ceux qui manquent (participants moins tapis déclarés, 6 au plus), affiché « Tapis à apporter » dans l'agenda et l'e-mail à SAFE.
 - Infos santé : facultatives, consentement explicite, supprimées 12 mois après la dernière séance.
 - Créneaux affichés dans le fuseau horaire du client.
@@ -92,7 +92,7 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 - **Mode démonstration** tant que `apiReservation` est vide dans `config.js`.
 - **Backend écrit et testé hors ligne** (`apps-script/Code.gs` + `appsscript.json`, 17/11) : config, deplacement (Google Maps), creneaux, reserver, paiement PayPal de la personne qui réserve, liens de paiement des autres participants (`?payer=`), pack (achat `?pack=1`, code `SAFE-XXXXXX`, crédit rendu si annulation dans les délais), annulation par la personne qui réserve ou désinscription d'un participant (`?annulation=…&p=`), « Réserver à nouveau » (`?reprise=`), rappels de la veille à 18 h (part non payée en ligne basculée en espèces), purge mensuelle des infos santé (12 mois).
 - Infos santé : jamais dans l'agenda partagé ; seulement dans l'e-mail à SAFE et une propriété privée de l'événement.
-- Battement autour des séances : 45 min à domicile, 10 min en ligne (`CONFIG.battement`).
+- Battement autour des séances (18/11, `CONFIG.battement`) : en ligne 0, à domicile dans Marseille 30 min, hors de Marseille 1 h. La zone (calculée à l'adresse) est envoyée avec la demande de créneaux ; autour d'une séance déjà réservée, on garde le plus grand des deux battements (propriété privée `zone` de chaque réservation).
 - Pack : vaut pour la part de la personne qui réserve ; le déplacement éventuel se règle en espèces.
 - Pack payé en espèces (18/11) : payé en une fois, enregistré par SAFE dans la page de gestion ; le client reçoit son code par e-mail comme pour un achat PayPal.
 - Remboursements PayPal automatiques (18/11, `CONFIG.remboursementAuto: true`) : client qui annule plus de 24 h avant, participant qui se désinscrit, séance annulée par SAFE (remboursement total). PayPal garde ses frais ; remboursement possible 180 jours au plus après le paiement.
@@ -107,7 +107,7 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 6. (Abandonné le 18/11, pour mémoire) PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
 7. Ouvrir des créneaux : événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
 
-Tests : `node outils/tests/tests.mjs` (23 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
+Tests : `node outils/tests/tests.mjs` (24 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
 
 ## 7. SEO
 
@@ -115,6 +115,7 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 
 ## 8. Journal
 
+- **18/11/2026** : battement selon la zone (en ligne 0, Marseille 30 min, hors Marseille 1 h) ; réduction première séance vérifiée par prénom + nom + e-mail, e-mail demandé aux participants qui cochent la case. Tests : 24.
 - **18/11/2026** : séances en ligne réglées avant la séance par PayPal seulement (adresse dans l'e-mail de confirmation, depuis la propriété `PAIEMENT_PAYPAL` ; RIB écarté) ; annulation à temps : e-mail « À VÉRIFIER » à SAFE pour rembourser un paiement déjà reçu. Tests : 23.
 - **18/11/2026** : PayPal abandonné : paiement en espèces le jour de la séance, pack réglé en espèces et enregistré dans la page de gestion ; textes de l'accueil, des conditions de vente et de la confidentialité mis à jour.
 - **18/11/2026** : page de gestion `/gestion/` (code `ADMIN_CODE`) : annulation d'une séance par SAFE avec remboursement total, packs payés en espèces, liste des packs ; remboursements PayPal automatiques. Tests du backend : 22.

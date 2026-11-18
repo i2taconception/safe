@@ -126,18 +126,33 @@ test('réduction première séance refusée pour un e-mail qui a déjà réserv�
   assert.equal(r.code, 'premiere');
 });
 
-test('réduction première séance : chaque participant est vérifié par prénom et nom', () => {
+test('réduction première séance : vérifiée par prénom, nom et e-mail de chaque participant', () => {
   const sim = preparer();
-  assert.equal(sim.post(demande(sim, { participants: [part('Léa', 'femme'), part('Tom', 'homme')] })).ok, true);
-  // Tom revient avec une autre personne qui réserve : sa « première séance » est refusée (accents et casse ignorés)
-  const r = sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' },
-    participants: [part('Zoé', 'femme', { premiere: true, nom: 'Durand' }), part('TOM', 'homme', { premiere: true, nom: 'martin' })] }));
-  assert.equal(r.code, 'premiere');
-  assert.match(r.message, /TOM martin/);
-  // sans la case pour Tom, la réservation passe et Zoé garde sa réduction
-  const ok = sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' },
-    participants: [part('Zoé', 'femme', { premiere: true, nom: 'Durand' }), part('Tom', 'homme')] }));
+  const zoe = { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' };
+  assert.equal(sim.post(demande(sim, { participants: [part('Léa', 'femme'), part('Tom', 'homme', { premiere: true, email: 'tom@exemple.fr' })] })).ok, true);
+  // e-mail obligatoire pour un participant qui demande la réduction
+  assert.equal(sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: zoe, participants: [part('Zoé', 'femme', { nom: 'Durand' }), part('Tom', 'homme', { premiere: true })] })).code, 'participants');
+  // même prénom, nom et e-mail (accents et majuscules ignorés) : refusé
+  const r = sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: zoe,
+    participants: [part('Zoé', 'femme', { premiere: true, nom: 'Durand' }), part('TOM', 'homme', { premiere: true, nom: 'martin', email: 'Tom@Exemple.fr' })] }));
+  assert.equal(r.code, 'premiere'); assert.match(r.message, /TOM martin/);
+  // homonyme avec une autre adresse e-mail : accepté
+  const ok = sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3), client: zoe,
+    participants: [part('Zoé', 'femme', { premiere: true, nom: 'Durand' }), part('Tom', 'homme', { premiere: true, email: 'autre.tom@exemple.fr' })] }));
   assert.equal(ok.ok, true);
+});
+
+test('battement : en ligne 0, Marseille 30 min, hors Marseille 1 h, le plus grand des deux autour d\'une séance', () => {
+  const c = preparer().contexte, h = n => Date.UTC(2026, 0, 5, n);
+  const f = [{ debut: h(8), fin: h(14), formats: null }], occ = [{ debut: h(10), fin: h(11) }];
+  const debuts = (o, oc) => [...c.calculerCreneaux(f, oc, { duree: 60, pas: 30, debutMin: 0, ...o })].map(t => (t - h(0)) / 3600e3);
+  assert.deepEqual(debuts({ format: 'enligne', battement: 0 }, occ), [8, 8.5, 9, 11, 11.5, 12, 12.5, 13]);
+  assert.deepEqual(debuts({ format: 'domicile', battement: 30 }, occ), [8, 8.5, 11.5, 12, 12.5, 13]);
+  assert.deepEqual(debuts({ format: 'domicile', battement: 60 }, occ), [8, 12, 12.5, 13]);
+  // séance déjà réservée hors Marseille (60) : une séance en ligne doit aussi garder 1 h
+  assert.deepEqual(debuts({ format: 'enligne', battement: 0 }, [{ debut: h(10), fin: h(11), battement: 60 }]), [8, 12, 12.5, 13]);
+  assert.equal(c.battementZone_('enligne', ''), 0); assert.equal(c.battementZone_('domicile', 'marseille'), 30);
+  assert.equal(c.battementZone_('domicile', 'hors'), 60); assert.equal(c.battementZone_('domicile', ''), 60);
 });
 
 test('participants : nom obligatoire, sexe femme ou homme uniquement', () => {
