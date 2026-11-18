@@ -64,6 +64,7 @@ index.html, en/index.html        Accueil FR et EN (écrits à la main)
 reserver/, en/book/              Réservation (générées)
 charte/, en/charter/             Charte de séance et attestation de santé (générées)
 mentions-legales/, conditions-de-vente/, confidentialite/   Pages légales FR, noindex (générées)
+gestion/                         Page de gestion SAFE, noindex, non liée (générée ; script assets/js/gestion.js)
 404.html, robots.txt, sitemap.xml, favicon.ico
 assets/css/site.css              Toute la mise en forme
 assets/js/config.js              URL du script Google + e-mail de contact
@@ -93,17 +94,20 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 - Infos santé : jamais dans l'agenda partagé ; seulement dans l'e-mail à SAFE et une propriété privée de l'événement.
 - Battement autour des séances : 45 min à domicile, 10 min en ligne (`CONFIG.battement`).
 - Pack : vaut pour la part de la personne qui réserve ; le déplacement éventuel se règle en espèces.
+- Pack payé en espèces (18/11) : payé en une fois, enregistré par SAFE dans la page de gestion ; le client reçoit son code par e-mail comme pour un achat PayPal.
+- Remboursements PayPal automatiques (18/11, `CONFIG.remboursementAuto: true`) : client qui annule plus de 24 h avant, participant qui se désinscrit, séance annulée par SAFE (remboursement total). PayPal garde ses frais ; remboursement possible 180 jours au plus après le paiement.
+- **Page de gestion** `/gestion/` (18/11) : protégée par le code `ADMIN_CODE` (propriété du script, 10 caractères au moins, jamais dans le dépôt), vérifié par le script ; 5 codes faux : blocage 1 h et e-mail à SAFE. Le code n'est gardé qu'en mémoire dans la page. Contenu : séances à venir (participants, paiements, tapis), « Annuler cette séance » (message aux participants, remboursement total, pack recrédité, créneau libéré, « ANNULÉ PAR SAFE » dans l'agenda), enregistrer un pack payé en espèces, liste des packs. Ne jamais supprimer une séance directement dans l'agenda : le client ne serait ni prévenu ni remboursé.
 
 ### Mise en service (compte safeinfocontact@gmail.com)
 1. Google Agenda : créer « Disponibilités SAFE » et « Réservations SAFE » (partager le second avec Adrien). Noter l'ID de chacun (Paramètres > Intégrer l'agenda).
 2. script.google.com > nouveau projet « Réservations SAFE ». Coller `Code.gs` ; Paramètres > afficher le manifeste, coller `appsscript.json`.
-3. `CONFIG` : `agendaDispos`, `agendaReservations`. Propriétés du script : `ADRESSE_DEPART` (adresse de départ, jamais dans le dépôt public), `PAYPAL_SECRET`.
+3. `CONFIG` : `agendaDispos`, `agendaReservations`. Propriétés du script : `ADRESSE_DEPART` (adresse de départ, jamais dans le dépôt public), `PAYPAL_SECRET`, `ADMIN_CODE` (code de la page de gestion).
 4. Exécuter `verifierConfiguration` (autoriser), lire le journal, puis une fois `installerDeclencheurs`.
 5. Déployer > Application Web, exécuter en tant que Moi, accès Tout le monde. Copier l'URL `/exec` dans `assets/js/config.js` (`apiReservation`). Après chaque modification : Gérer les déploiements > Nouvelle version.
 6. PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
 7. Ouvrir des créneaux : événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
 
-Tests : `node outils/tests/tests.mjs` (19 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé).
+Tests : `node outils/tests/tests.mjs` (22 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
 
 ## 7. SEO
 
@@ -111,6 +115,7 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 
 ## 8. Journal
 
+- **18/11/2026** : page de gestion `/gestion/` (code `ADMIN_CODE`) : annulation d'une séance par SAFE avec remboursement total, packs payés en espèces, liste des packs ; remboursements PayPal automatiques. Tests du backend : 22.
 - **18/11/2026** : lotus refait sur le modèle d'I2TA (numéros, étiquettes, barre de progression) ; réservation : prénom et nom par participant, sexe Femme/Homme sans texte d'aide, réduction première séance vérifiée pour chaque participant, question des tapis inversée. Tests du backend : 19.
 - **18/11/2026** : backend installé sur safeinfocontact@gmail.com (projet Apps Script « Réservations SAFE », agendas « Disponibilités SAFE » et « Réservations SAFE », propriété `ADRESSE_DEPART`, déclencheurs), déployé en application Web (version 1) et branché dans `config.js` : fin du mode démonstration. Paiement en espèces seulement tant que PayPal n'est pas configuré. Limite de déplacement portée à 45 km.
 - **17/11/2026** : dépôt `i2taconception/safe` créé, GitHub Pages activé (branche `main`, racine). Ancien dépôt `ihssane-yoga` supprimé.

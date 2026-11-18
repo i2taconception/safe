@@ -1,0 +1,21 @@
+<!--
+chemin: gestion/index.html
+lang: fr
+titre: Gestion, SAFE
+description: Espace de gestion réservé à SAFE : séances à venir, annulation, packs payés en espèces.
+indexer: non
+scripts: assets/js/config.js assets/js/gestion.js
+-->
+<div class="conteneur page-titre"><h1>Gestion</h1></div>
+<div class="conteneur contenu" id="gestion">
+  <form id="g-connexion" class="encadre" style="max-width:30rem" novalidate>
+    <div class="champ" style="margin:0">
+      <label for="g-code">Code de gestion</label>
+      <input id="g-code" type="password" autocomplete="current-password" required>
+      <span class="aide">Espace réservé à SAFE. Après 5 codes faux, l'accès est bloqué pendant une heure.</span>
+    </div>
+    <p style="margin:1rem 0 0"><button class="btn" type="submit">Ouvrir</button></p>
+    <p class="statut ko" id="g-erreur" role="alert" hidden></p>
+  </form>
+  <div id="g-contenu" hidden></div>
+</div>

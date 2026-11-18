@@ -166,7 +166,8 @@ export function creerSimulateur({ secret = 'secret-test', clientId = 'client-tes
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
     PropertiesService: { getScriptProperties: () => ({
       getProperty: k => (proprietes.has(k) ? proprietes.get(k) : null),
-      setProperty: (k, v) => proprietes.set(k, String(v))
+      setProperty: (k, v) => proprietes.set(k, String(v)),
+      getProperties: () => Object.fromEntries(proprietes)
     }) },
     MailApp: { sendEmail(a, b, c) { emails.push(typeof a === 'object' ? a : { to: a, subject: b, body: c }); } },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput(s) { return { contenu: s, setMimeType() { return this; } }; } },

@@ -203,7 +203,7 @@ test('pack : achat, code par e-mail, réservation avec le pack, recrédit si ann
   assert.equal(sim.post({ action: 'pack', code, email: 'lea@exemple.fr' }).pack.restant, 11);
 });
 
-test('annulation par la personne qui réserve : remboursements à faire, créneau libéré, participants prévenus', () => {
+test('annulation par la personne qui réserve : remboursement automatique, créneau libéré, participants prévenus', () => {
   const sim = preparer();
   const d = demande(sim, { action: 'paypal_creer', participants: [part('Léa', 'femme', { paiement: 'enligne' }), part('Tom', 'homme', { paiement: 'lien', email: 'tom@exemple.fr' })] });
   const { reservation } = sim.post({ action: 'paypal_valider', orderID: sim.post(d).orderID });
@@ -212,7 +212,8 @@ test('annulation par la personne qui réserve : remboursements à faire, crénea
   sim.emails.length = 0;
   const a = sim.post({ action: 'annuler', id: reservation.id, cle: reservation.cle });
   assert.equal(a.ok, true); assert.equal(a.rembourse, true);
-  assert.match(sim.emails[0].body, /À FAIRE : rembourser 25 € à Léa/);
+  assert.match(sim.emails[0].body, /Remboursé automatiquement : 25 € à Léa/);
+  assert.equal(JSON.parse(sim.agendas.resas[0].extendedProperties.private.p0).t, 'rembourse');
   assert.deepEqual(sim.emails.map(m => m.to), ['safe@test.fr', 'lea@exemple.fr', 'tom@exemple.fr']);
   assert.match(sim.agendas.resas[0].summary, /^ANNULÉ/);
   const libres = sim.get({ action: 'creneaux', format: 'domicile', duree: '60', debut, fin }).jours.flatMap(j => j.creneaux.map(x => x.debut));
@@ -274,6 +275,52 @@ test('purge des informations de santé après 12 mois', () => {
     extendedProperties: { private: { sante: 'Dos', statut: 'confirmee' } } }];
   sim.contexte.purgerDonneesSante();
   assert.equal(sim.agendas.resas[0].extendedProperties.private.sante, '');
+});
+
+
+test('gestion : code obligatoire, blocage après 5 essais faux', () => {
+  const sim = preparer();
+  assert.equal(sim.post({ action: 'admin_liste', code: 'nimporte' }).code, 'admin');
+  sim.proprietes.set('ADMIN_CODE', 'lotus-rose-2026');
+  for (let i = 0; i < 5; i++) assert.equal(sim.post({ action: 'admin_liste', code: 'faux' }).code, 'code');
+  assert.equal(sim.post({ action: 'admin_liste', code: 'lotus-rose-2026' }).code, 'bloque');
+  assert.match(sim.emails.at(-1).subject, /bloquée/);
+});
+
+test('gestion : pack payé en espèces, utilisable ensuite pour réserver', () => {
+  const sim = preparer();
+  sim.proprietes.set('ADMIN_CODE', 'lotus-rose-2026');
+  const base = { action: 'admin_pack_especes', code: 'lotus-rose-2026', format: 'domicile', duree: 60, taille: 1, client: { nom: 'Léa Martin', email: 'lea@exemple.fr' }, lang: 'fr' };
+  assert.equal(sim.post(base).code, 'recu');
+  const r = sim.post({ ...base, recu: true });
+  assert.equal(r.ok, true); assert.equal(r.pack.montant, 300);
+  assert.ok(sim.emails.some(m => m.to === 'lea@exemple.fr' && /SAFE-/.test(m.htmlBody)));
+  assert.match(sim.emails.find(m => m.to === 'safe@test.fr').body, /payé en espèces/);
+  const liste = sim.post({ action: 'admin_liste', code: 'lotus-rose-2026' });
+  assert.equal(liste.packs[0].paiement, 'especes'); assert.equal(liste.packs[0].restant, 11);
+  const resa = sim.post(demande(sim, { participants: [part('Léa', 'femme', { paiement: 'pack' })], pack: r.pack.code }));
+  assert.equal(resa.ok, true);
+  assert.equal(sim.post({ action: 'admin_liste', code: 'lotus-rose-2026' }).packs[0].restant, 10);
+});
+
+test('gestion : séance annulée par SAFE, remboursement total, pack recrédité, tout le monde prévenu', () => {
+  const sim = preparer();
+  sim.proprietes.set('ADMIN_CODE', 'lotus-rose-2026');
+  const d = demande(sim, { action: 'paypal_creer', participants: [part('Léa', 'femme', { paiement: 'enligne' }), part('Tom', 'homme', { paiement: 'lien', email: 'tom@exemple.fr' }), part('Inès', 'femme')] });
+  const { reservation } = sim.post({ action: 'paypal_valider', orderID: sim.post(d).orderID });
+  const liste = sim.post({ action: 'admin_liste', code: 'lotus-rose-2026' });
+  assert.equal(liste.seances.length, 1); assert.equal(liste.seances[0].participants[0].statut, 'paye');
+  sim.emails.length = 0;
+  const a = sim.post({ action: 'admin_annuler', code: 'lotus-rose-2026', id: reservation.id, message: 'Empêchement, désolée.' });
+  assert.equal(a.ok, true); assert.equal(a.rembourses, 1); assert.equal(a.prevenus, 2);
+  assert.match(sim.agendas.resas[0].summary, /^ANNULÉ PAR SAFE/);
+  const client = sim.emails.find(m => m.to === 'lea@exemple.fr');
+  assert.match(client.htmlBody, /Empêchement, désolée\./); assert.match(client.htmlBody, /remboursé en totalité/);
+  assert.ok(sim.emails.some(m => m.to === 'tom@exemple.fr'));
+  assert.match(sim.emails.find(m => m.to === 'safe@test.fr').body, /Remboursé automatiquement : 20 € à Léa/);
+  assert.equal(sim.post({ action: 'admin_annuler', code: 'lotus-rose-2026', id: reservation.id }).dejaAnnulee, true);
+  const libres = sim.get({ action: 'creneaux', format: 'domicile', duree: '60', debut, fin }).jours.flatMap(j => j.creneaux.map(x => x.debut));
+  assert.ok(libres.includes(d.debut));
 });
 
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ', des échecs ci-dessus' : ''));

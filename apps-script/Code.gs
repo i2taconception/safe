@@ -35,7 +35,7 @@ var CONFIG = {
   preavisHeures: 24,
   horizonJours: 60,
   annulationHeures: 24,
-  remboursementAuto: false,   // true : rembourse automatiquement via PayPal quand c'est dû
+  remboursementAuto: true,    // rembourse automatiquement via PayPal quand c'est dû (décision du 18/11)
   maxReservationsParEmailParJour: 4,
 
   departParDefaut: '13009 Marseille, France', // remplacé par la propriété ADRESSE_DEPART
@@ -105,6 +105,9 @@ function doPost(e) {
       case 'pack':                return json_(lirePack_(d));
       case 'annuler':             return json_(annuler_(d));
       case 'contact':             return json_(contact_(d));
+      case 'admin_liste':         verifierAdmin_(d.code); return json_(adminListe_());
+      case 'admin_pack_especes':  verifierAdmin_(d.code); return json_(adminPackEspeces_(d));
+      case 'admin_annuler':       verifierAdmin_(d.code); return json_(adminAnnuler_(d));
       default:                    return json_({ ok: false, code: 'action', message: 'Action inconnue.' });
     }
   } catch (err) {
@@ -692,7 +695,7 @@ function libellePack_(p, lang) {
   return p.duree + ' min, ' + (p.format === 'enligne' ? LIBELLES.enligne[lang] : LIBELLES.domicile[lang] + ' ' + LIBELLES.taille[p.taille][lang]);
 }
 
-function validerAchatPack_(d) {
+function validerAchatPack_(d, especes) {
   if (d.piege) throw erreurUtilisateur_('spam', 'Demande refusée.');
   var format = d.format, duree = Number(d.duree), taille = format === 'enligne' ? 1 : Number(d.taille);
   if ([1, 2, 3].indexOf(taille) < 0) throw erreurUtilisateur_('taille', 'Taille de groupe invalide.');
@@ -701,8 +704,9 @@ function validerAchatPack_(d) {
   var client = { nom: propre_(c.nom, 80), email: propre_(c.email, 120).toLowerCase() };
   if (!client.nom) throw erreurUtilisateur_('client', 'Nom obligatoire.');
   if (!EMAIL_RE.test(client.email)) throw erreurUtilisateur_('email', 'Adresse e-mail invalide.');
-  if (d.cgv !== true) throw erreurUtilisateur_('cgv', 'Merci d\'accepter les conditions de vente.');
-  if (!CONFIG.paypal.clientId) throw erreurUtilisateur_('paiement', 'Le paiement en ligne n\'est pas disponible.');
+  if (d.cgv !== true && !especes) throw erreurUtilisateur_('cgv', 'Merci d\'accepter les conditions de vente.');
+  if (['domicile', 'enligne'].indexOf(format) < 0 || CATALOGUE.durees.indexOf(duree) < 0) throw erreurUtilisateur_('formule', 'Formule invalide.');
+  if (!especes && !CONFIG.paypal.clientId) throw erreurUtilisateur_('paiement', 'Le paiement en ligne n\'est pas disponible.');
   return { format: format, duree: duree, taille: taille, montant: montant, client: client, lang: d.lang === 'en' ? 'en' : 'fr' };
 }
 
@@ -720,21 +724,27 @@ function paypalValiderPack_(d) {
     var e = paypalEncaisser_(d.orderID, a.montant);
     if (e.refus) return e.refus;
     CacheService.getScriptCache().remove('cmd_' + d.orderID);
-    var code;
-    do { code = 'SAFE-' + jeton_(6).toUpperCase(); } while (lirePackBrut_(code));
-    var p = { code: code, email: a.client.email, nom: a.client.nom, format: a.format, duree: a.duree, taille: a.taille,
-              total: CATALOGUE.pack.seances, restant: CATALOGUE.pack.seances, montant: a.montant, capture: e.capture.id,
-              achat: new Date().toISOString(), expire: new Date(Date.now() + CATALOGUE.pack.validiteJours * 86400e3).toISOString(), lang: a.lang };
-    PropertiesService.getScriptProperties().setProperty('pack_' + code, JSON.stringify(p));
-    var t = TEXTES[a.lang], fin = libelleJour_(new Date(p.expire), a.lang);
-    MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Pack vendu : ' + a.client.nom + ' (' + libellePack_(p, 'fr') + ')',
-      body: 'Pack de ' + p.total + ' séances vendu ' + euros_(a.montant) + ' (PayPal ' + e.capture.id + ').\n' +
-            'Client : ' + a.client.nom + ' <' + a.client.email + '>\nFormule : ' + libellePack_(p, 'fr') + '\nCode : ' + code + '\nValable jusqu\'au ' + libelleJour_(new Date(p.expire), 'fr') });
-    MailApp.sendEmail({ to: a.client.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: t.sujetPack,
-      htmlBody: gabaritEmail_(t.sujetPack, '<p>' + echapper_(t.bonjour(a.client.nom)) + '</p><p>' + t.corpsPack(p.total, libellePack_(p, a.lang), code, fin) + '</p>' +
-        '<p><a style="color:#742834" href="' + CONFIG.urlSite + (a.lang === 'en' ? '/en/book/' : '/reserver/') + '">' + t.reserverMaintenant + '</a></p>', a.lang) });
-    return { ok: true, pack: { code: code, restant: p.restant, total: p.total, expire: p.expire, formule: libellePack_(p, a.lang) } };
+    var p = creerPack_(a, 'paypal', e.capture.id);
+    return { ok: true, pack: { code: p.code, restant: p.restant, total: p.total, expire: p.expire, formule: libellePack_(p, a.lang) } };
   });
+}
+
+/** Crée un pack (payé par PayPal ou en espèces), prévient SAFE et envoie le code au client. */
+function creerPack_(a, paiement, capture) {
+  var code;
+  do { code = 'SAFE-' + jeton_(6).toUpperCase(); } while (lirePackBrut_(code));
+  var p = { code: code, email: a.client.email, nom: a.client.nom, format: a.format, duree: a.duree, taille: a.taille,
+            total: CATALOGUE.pack.seances, restant: CATALOGUE.pack.seances, montant: a.montant, paiement: paiement, capture: capture || '',
+            achat: new Date().toISOString(), expire: new Date(Date.now() + CATALOGUE.pack.validiteJours * 86400e3).toISOString(), lang: a.lang };
+  PropertiesService.getScriptProperties().setProperty('pack_' + code, JSON.stringify(p));
+  var t = TEXTES[a.lang], fin = libelleJour_(new Date(p.expire), a.lang);
+  MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Pack vendu : ' + a.client.nom + ' (' + libellePack_(p, 'fr') + ')',
+    body: 'Pack de ' + p.total + ' séances vendu ' + euros_(a.montant) + (paiement === 'especes' ? ' (payé en espèces, enregistré depuis la page de gestion).' : ' (PayPal ' + capture + ').') + '\n' +
+          'Client : ' + a.client.nom + ' <' + a.client.email + '>\nFormule : ' + libellePack_(p, 'fr') + '\nCode : ' + code + '\nValable jusqu\'au ' + libelleJour_(new Date(p.expire), 'fr') });
+  MailApp.sendEmail({ to: a.client.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: t.sujetPack,
+    htmlBody: gabaritEmail_(t.sujetPack, '<p>' + echapper_(t.bonjour(a.client.nom)) + '</p><p>' + t.corpsPack(p.total, libellePack_(p, a.lang), code, fin) + '</p>' +
+      '<p><a style="color:#742834" href="' + CONFIG.urlSite + (a.lang === 'en' ? '/en/book/' : '/reserver/') + '">' + t.reserverMaintenant + '</a></p>', a.lang) });
+  return p;
 }
 
 function lirePack_(d) {
@@ -861,6 +871,99 @@ function annulerParticipant_(t) {
 }
 
 // ============================================================
+// GESTION (page /gestion/ protégée par le code ADMIN_CODE des propriétés du script)
+// ============================================================
+function verifierAdmin_(code) {
+  var cache = CacheService.getScriptCache();
+  var echecs = Number(cache.get('admin_echecs') || 0);
+  if (echecs >= 5) throw erreurUtilisateur_('bloque', 'Trop de codes faux : la gestion est bloquée pendant une heure.');
+  var bon = PropertiesService.getScriptProperties().getProperty('ADMIN_CODE') || '';
+  if (bon.length < 10) throw erreurUtilisateur_('admin', 'Accès de gestion non configuré (propriété ADMIN_CODE, 10 caractères au moins).');
+  if (String(code || '') !== bon) {
+    cache.put('admin_echecs', String(echecs + 1), 3600);
+    if (echecs + 1 >= 5) MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Gestion SAFE bloquée', body: '5 codes faux ont été saisis sur la page de gestion. Elle est bloquée pendant une heure. Si ce n\'était pas vous, changez le code (propriété ADMIN_CODE).' });
+    throw erreurUtilisateur_('code', 'Code incorrect.');
+  }
+}
+
+function adminListe_() {
+  var tMin = new Date(Date.now() - 86400e3), tMax = new Date(Date.now() + 120 * 86400e3);
+  var seances = listerEvenements_(CONFIG.agendaReservations, tMin, tMax, null).filter(function (ev) {
+    return ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.resaId;
+  }).map(function (ev) {
+    var q = ev.extendedProperties.private, ps = [];
+    for (var i = 0; i < Number(q.nb); i++) { var x = JSON.parse(q['p' + i]); ps.push({ nom: x.n, statut: x.t, mode: x.m, montant: x.a }); }
+    return { id: q.resaId, debut: ev.start.dateTime, statut: q.statut, format: q.format, duree: Number(q.duree), ville: q.ville || '',
+             tapis: Number(q.tapis || 0), pack: q.pack || '', participants: ps, passee: Date.parse(ev.start.dateTime) <= Date.now() };
+  }).sort(function (a, b) { return Date.parse(a.debut) - Date.parse(b.debut); });
+  var props = PropertiesService.getScriptProperties().getProperties(), packs = [];
+  Object.keys(props).forEach(function (k) {
+    if (k.indexOf('pack_') !== 0) return;
+    var p = JSON.parse(props[k]);
+    packs.push({ code: p.code, nom: p.nom, email: p.email, formule: libellePack_(p, 'fr'), restant: p.restant, total: p.total,
+                 expire: p.expire, achat: p.achat, paiement: p.paiement || 'paypal', montant: p.montant });
+  });
+  packs.sort(function (a, b) { return Date.parse(b.achat) - Date.parse(a.achat); });
+  return { ok: true, seances: seances, packs: packs, catalogue: CATALOGUE };
+}
+
+/** Pack payé en espèces, enregistré par SAFE. */
+function adminPackEspeces_(d) {
+  var a = validerAchatPack_(d, true);
+  if (d.recu !== true) throw erreurUtilisateur_('recu', 'Cochez la case qui confirme que le montant a été reçu en espèces.');
+  return avecVerrou_(function () {
+    var p = creerPack_(a, 'especes', '');
+    return { ok: true, pack: { code: p.code, formule: libellePack_(p, 'fr'), montant: p.montant, expire: p.expire } };
+  });
+}
+
+/** Séance annulée par SAFE : tout le monde est prévenu, remboursé en totalité, et le pack est recrédité. */
+function adminAnnuler_(d) {
+  var message = String(d.message || '').trim().slice(0, 1000);
+  return avecVerrou_(function () {
+    var ev = trouverEvenement_(d.id), q = ev.extendedProperties.private;
+    if (q.statut !== 'confirmee') return { ok: true, dejaAnnulee: true };
+    var debut = Date.parse(ev.start.dateTime);
+    if (debut <= Date.now()) throw erreurUtilisateur_('passee', 'Cette séance est déjà passée.');
+    var rembourses = [], aRembourser = [], destinataires = [];
+    for (var i = 0; i < Number(q.nb); i++) {
+      var x = JSON.parse(q['p' + i]);
+      if (x.t === 'paye') {
+        if (paypalRembourser_(x.c, x.a)) { x.t = 'rembourse'; rembourses.push(x); } else aRembourser.push(x);
+      } else if (x.t !== 'rembourse') x.t = 'annule';
+      q['p' + i] = JSON.stringify(x);
+      var email = i === 0 ? q.email : x.e;
+      if (email) destinataires.push({ email: email, x: x, i: i });
+    }
+    if (q.pack) utiliserPack_(q.pack, +1);
+    q.statut = 'annulee';
+    q.annulePar = 'safe';
+    Calendar.Events.patch({ summary: 'ANNULÉ PAR SAFE · ' + ev.summary, transparency: 'transparent', colorId: '8', extendedProperties: { private: q } },
+      CONFIG.agendaReservations, ev.id, { sendUpdates: 'none' });
+
+    var quand = libelleDate_(new Date(debut), 'fr');
+    var lignes = ['Vous avez annulé la séance du ' + quand + '.', message ? 'Message envoyé aux participants : ' + message : '', ''];
+    rembourses.forEach(function (x) { lignes.push('Remboursé automatiquement : ' + euros_(x.a) + ' à ' + x.n + '.'); });
+    aRembourser.forEach(function (x) { lignes.push('À FAIRE : le remboursement automatique a échoué, rembourser ' + euros_(x.a) + ' à ' + x.n + ' dans PayPal (transaction ' + x.c + ').'); });
+    if (q.pack) lignes.push('Séance recréditée sur le pack ' + q.pack + '.');
+    lignes.push('Participants prévenus par e-mail : ' + (destinataires.map(function (y) { return y.x.n; }).join(', ') || 'aucun'), '', ev.description || '');
+    MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Séance annulée par SAFE : ' + quand, body: lignes.join('\n') });
+
+    var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang], qd = libelleDate_(new Date(debut), lang);
+    destinataires.forEach(function (y) {
+      var paye = y.x.t === 'rembourse' || aRembourser.indexOf(y.x) >= 0;
+      var html = '<p>' + echapper_(tx.bonjour(y.x.f || y.x.n)) + '</p><p>' + tx.corpsAnnulationSafe(qd) + '</p>' +
+        (message ? '<p>' + echapper_(message).replace(/\n/g, '<br>') + '</p>' : '') +
+        (paye ? '<p>' + tx.rembourseSafe(euros_(y.x.a)) + '</p>' : '') +
+        (y.i === 0 && q.pack ? '<p>' + tx.packRecredite + '</p>' : '') +
+        '<p><a style="color:#742834" href="' + CONFIG.urlSite + (lang === 'en' ? '/en/book/' : '/reserver/') + '">' + tx.reserverMaintenant + '</a></p>';
+      MailApp.sendEmail({ to: y.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulationSafe(qd), htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
+    });
+    return { ok: true, rembourses: rembourses.length, aRembourser: aRembourser.length, prevenus: destinataires.length };
+  });
+}
+
+// ============================================================
 // CONTACT
 // ============================================================
 function contact_(d) {
@@ -906,6 +1009,10 @@ var TEXTES = {
     corpsDesinscription: function (p, q) { return p + ' s\'est désinscrit de la séance du ' + q + '. Le prix des autres participants ne change pas.'; },
     sujetPartPayee: 'Votre part est réglée', partPayee: function (m, q) { return 'Nous avons bien reçu votre paiement de ' + m + ' pour la séance du ' + q + '. Merci !'; },
     sujetPack: 'Votre pack SAFE Yoga', reserverMaintenant: 'Réserver une séance',
+    sujetAnnulationSafe: function (q) { return 'Séance SAFE annulée : ' + q; },
+    corpsAnnulationSafe: function (q) { return 'Nous sommes désolés : nous devons annuler votre séance du ' + q + '.'; },
+    rembourseSafe: function (m) { return 'Votre paiement en ligne (' + m + ') vous est remboursé en totalité. Il apparaît sous quelques jours, selon votre banque.'; },
+    packRecredite: 'La séance a été recréditée sur votre pack.',
     corpsPack: function (n, f, c, fin) { return 'Merci pour votre achat : ' + n + ' séances (' + echapper_(f) + '), valables jusqu\'au ' + fin + '.<br>Votre code de pack : <strong>' + c + '</strong><br>Au moment de réserver, choisissez « Avec mon pack » et indiquez ce code avec la même adresse e-mail. Le déplacement éventuel se règle en espèces.'; }
   },
   en: {
@@ -937,6 +1044,10 @@ var TEXTES = {
     corpsDesinscription: function (p, q) { return p + ' has cancelled their place in the session on ' + q + '. The price for the other participants does not change.'; },
     sujetPartPayee: 'Your share is paid', partPayee: function (m, q) { return 'We have received your payment of ' + m + ' for the session on ' + q + '. Thank you!'; },
     sujetPack: 'Your SAFE Yoga pack', reserverMaintenant: 'Book a session',
+    sujetAnnulationSafe: function (q) { return 'SAFE session cancelled: ' + q; },
+    corpsAnnulationSafe: function (q) { return 'We are sorry: we have to cancel your session on ' + q + '.'; },
+    rembourseSafe: function (m) { return 'Your online payment (' + m + ') is refunded in full. It will appear within a few days, depending on your bank.'; },
+    packRecredite: 'The session has been credited back to your pack.',
     corpsPack: function (n, f, c, fin) { return 'Thank you for your purchase: ' + n + ' sessions (' + echapper_(f) + '), valid until ' + fin + '.<br>Your pack code: <strong>' + c + '</strong><br>When booking, choose "With my pack" and enter this code with the same email address. Any travel cost is paid in cash.'; }
   }
 };
@@ -1122,6 +1233,7 @@ function verifierConfiguration() {
   [CONFIG.agendaDispos, CONFIG.agendaReservations].forEach(function (id) { Logger.log('Agenda OK : ' + Calendar.Calendars.get(id).summary + ' (' + id + ')'); });
   var props = PropertiesService.getScriptProperties();
   Logger.log('Adresse de départ : ' + (props.getProperty('ADRESSE_DEPART') ? 'renseignée' : 'MANQUANTE (propriété ADRESSE_DEPART), valeur par défaut utilisée'));
+  Logger.log('Code de la page de gestion : ' + ((props.getProperty('ADMIN_CODE') || '').length >= 10 ? 'renseigné' : 'MANQUANT (propriété ADMIN_CODE, 10 caractères au moins)'));
   var aix = deplacement_('Cours Mirabeau, 13100 Aix-en-Provence');
   Logger.log('Test trajet Aix : ' + aix.km + ' km aller-retour, ' + aix.montant + ' € (' + aix.zone + ')');
   var r = creneauxDisponibles_({ format: 'enligne', duree: 60, debut: Utilities.formatDate(new Date(), CONFIG.fuseau, 'yyyy-MM-dd'),

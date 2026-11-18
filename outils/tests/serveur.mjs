@@ -14,6 +14,7 @@ const sim = creerSimulateur();
 remplirDemo(sim);
 // Sans --paypal : pas de paiement en ligne (le vrai module PayPal ne peut pas se charger en local).
 if (!process.argv.includes('--paypal')) sim.CONFIG.paypal.clientId = '';
+sim.proprietes.set('ADMIN_CODE', 'gestion-locale-2026'); // code de la page /gestion/ en local
 export { sim };
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml',
