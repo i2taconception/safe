@@ -26,8 +26,8 @@ var CONFIG = {
   emailProprietaire: 'safeinfocontact@gmail.com',      // reçoit les notifications
   fuseau: 'Europe/Paris',
 
-  agendaDispos: 'A_COMPLETER@group.calendar.google.com',       // agenda « Disponibilités SAFE »
-  agendaReservations: 'A_COMPLETER@group.calendar.google.com', // agenda « Réservations SAFE » (partagé avec Adrien)
+  agendaDispos: 'fe7d49da96ee4aba93c35d24e392adbf1e72a0d7bcdcde8f0f9a4917b04e6a2c@group.calendar.google.com',       // agenda « Disponibilités SAFE »
+  agendaReservations: '13f4d3af51041bbc09aeffd0da5ee3d58f6c568d5bda55062d2bb80144f6e1b2@group.calendar.google.com', // agenda « Réservations SAFE » (partagé avec Adrien)
   agendasOccupes: ['primary'],
 
   pasMinutes: 30,
