@@ -323,4 +323,28 @@ test('gestion : séance annulée par SAFE, remboursement total, pack recrédité
   assert.ok(libres.includes(d.debut));
 });
 
+test('séance en ligne : paiement par virement ou PayPal, coordonnées dans l\'e-mail, espèces refusées', () => {
+  const sim = preparer();
+  const base = { format: 'enligne', tapis: 0, adresse: null };
+  assert.equal(sim.post(demande(sim, { ...base, participants: [part('Léa', 'femme')] })).code, 'paiement');
+  // sans coordonnées renseignées : message d'attente
+  const r0 = sim.post(demande(sim, { ...base, participants: [part('Léa', 'femme', { paiement: 'virement' })] }));
+  assert.equal(r0.ok, true);
+  assert.match(sim.emails.find(m => m.to === 'lea@exemple.fr').htmlBody, /Nous vous envoyons nos coordonnées de paiement/);
+  sim.proprietes.set('PAIEMENT_TITULAIRE', 'SAFE Test'); sim.proprietes.set('PAIEMENT_IBAN', 'FR76 0000 0000 0000');
+  sim.proprietes.set('PAIEMENT_BIC', 'TESTFRPP'); sim.proprietes.set('PAIEMENT_PAYPAL', 'paiement@exemple.fr');
+  sim.emails.length = 0;
+  const r = sim.post(demande(sim, { ...base, debut: creneau(sim, 'enligne', 60, 2), client: { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' }, participants: [part('Zoé', 'femme', { paiement: 'virement', nom: 'Durand' })] }));
+  assert.equal(r.ok, true);
+  const mail = sim.emails.find(m => m.to === 'zoe@exemple.fr').htmlBody;
+  assert.match(mail, /FR76 0000 0000 0000/); assert.match(mail, /paiement@exemple\.fr/); assert.match(mail, /25 €/); assert.match(mail, /SAFE-[a-f0-9]{12}/);
+  assert.match(sim.emails.find(m => m.to === 'safe@test.fr').body, /virement ou PayPal avant la séance 25 €/);
+  // annulation à temps : SAFE doit vérifier un éventuel paiement déjà reçu
+  const q = sim.agendas.resas.at(-1).extendedProperties.private;
+  sim.emails.length = 0;
+  assert.equal(sim.post({ action: 'annuler', id: q.resaId, cle: q.cle }).ok, true);
+  assert.match(sim.emails.find(m => m.to === 'safe@test.fr').body, /À VÉRIFIER : si Zoé Durand a déjà payé/);
+  assert.match(sim.emails.find(m => m.to === 'zoe@exemple.fr').htmlBody, /nous vous remboursons/);
+});
+
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ', des échecs ci-dessus' : ''));

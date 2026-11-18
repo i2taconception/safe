@@ -60,6 +60,7 @@
       payerEnLigne: 'En ligne maintenant', payerEnLigneAide: 'PayPal ou carte bancaire, sans compte PayPal.',
       lienEmail: 'Lien de paiement par e-mail', lienEmailAide: 'PayPal ou carte, à régler au plus tard 24 h avant.',
       especes: 'En espèces le jour de la séance', especesAide: 'Le montant exact est apprécié.',
+      virement: 'Virement bancaire ou PayPal, avant la séance', virementAide: 'Nos coordonnées de paiement vous sont envoyées dans l\'e-mail de confirmation.',
       emailParticipant: function (p) { return 'E-mail de ' + p; },
       confirmer: 'Confirmer la réservation', envoi: 'Réservation en cours…',
       simuler: 'Simuler le paiement en ligne', paypalChargement: 'Chargement du paiement sécurisé…',
@@ -140,6 +141,7 @@
       payerEnLigne: 'Online now', payerEnLigneAide: 'PayPal or bank card, no PayPal account needed.',
       lienEmail: 'Payment link by email', lienEmailAide: 'PayPal or card, to be paid at least 24 hours before.',
       especes: 'Cash on the day', especesAide: 'The exact amount is appreciated.',
+      virement: 'Bank transfer or PayPal, before the session', virementAide: 'Our payment details are sent to you in the confirmation email.',
       emailParticipant: function (p) { return p + '’s email'; },
       confirmer: 'Confirm booking', envoi: 'Booking…',
       simuler: 'Simulate online payment', paypalChargement: 'Loading secure payment…',
@@ -662,14 +664,18 @@
     var enLigne = enLignePossible();
     etat.participants.slice(0, etat.nb).forEach(function (p, i) {
       if (!enLigne && (p.mode === 'enligne' || p.mode === 'lien')) p.mode = 'especes';
+      // Séance en ligne : pas d'espèces possibles, paiement par virement ou PayPal avant la séance.
+      if (etat.format === 'enligne' && p.mode === 'especes') p.mode = 'virement';
+      if (etat.format === 'domicile' && p.mode === 'virement') p.mode = 'especes';
       if (i === 0 && p.mode === 'lien') p.mode = 'enligne';
       if (i > 0 && p.mode === 'enligne') p.mode = 'lien';
       var titre = i === 0 ? TXT.votrePaiement : TXT.paiementDe(p.prenom || TXT.participant(i));
       var bloc = el('<div style="margin-top:1.2rem"><p class="titre-p" id="tp-' + i + '" style="font-weight:650;margin:0 0 .5rem">' + esc(titre) + ' · ' + euros(m.parts[i]) + '</p></div>');
       var opts = [];
       if (enLigne) opts.push(i === 0 ? { valeur: 'enligne', titre: TXT.payerEnLigne, detail: esc(TXT.payerEnLigneAide) } : { valeur: 'lien', titre: TXT.lienEmail, detail: esc(TXT.lienEmailAide) });
-      opts.push({ valeur: 'especes', titre: TXT.especes, detail: esc(TXT.especesAide) });
-      if (i === 0) opts.push({ valeur: 'pack', titre: TXT.avecPack, detail: esc(TXT.avecPackAide) });
+      if (etat.format === 'enligne') opts.push({ valeur: 'virement', titre: TXT.virement, detail: esc(TXT.virementAide) });
+      else opts.push({ valeur: 'especes', titre: TXT.especes, detail: esc(TXT.especesAide) });
+      if (i === 0) opts.push({ valeur: 'pack', titre: TXT.avecPack, detail: etat.format === 'domicile' ? esc(TXT.avecPackAide) : '' });
       bloc.appendChild(groupeRadio('mode' + i, opts, p.mode, function (v) { p.mode = v; recap(); etapePaiement(false); var r = document.getElementById('mode' + i + '-' + v); if (r) r.focus(); }, 'tp-' + i));
       if (i === 0 && p.mode === 'pack') {
         var cp = el('<div class="champ" style="margin-top:.7rem"><label for="c-pack">' + TXT.codePack + '</label><input id="c-pack" autocomplete="off" autocapitalize="characters" placeholder="SAFE-XXXXXX" required aria-required="true" aria-describedby="c-pack-aide" value="' + esc(etat.packCode) + '"><span class="aide" id="c-pack-aide">' + TXT.codePackAide + '</span></div>');

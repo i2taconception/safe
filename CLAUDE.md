@@ -34,7 +34,7 @@ Fiche de référence du site. Toute session (Claude ou humaine) la lit avant de 
 - Déplacement : gratuit dans Marseille (elle y va en transports) ; au-delà, 0,30 € par km sur l'aller-retour en voiture calculé par Google Maps, arrondi à l'euro, une fois par séance, partagé entre participants, stationnement compris ; au-delà de 45 km de route à l'aller : devis (limite portée de 35 à 45 km le 18/11 : Aix centre est à environ 40 km).
 - Groupes : 6 personnes maximum, groupes privés chez l'un d'eux. En ligne : 1 personne.
 - Tapis : apportés gratuitement, 6 maximum.
-- Paiement : **en espèces le jour de la séance uniquement** (décision du 18/11 : PayPal abandonné). Chaque participant règle sa part. Le code PayPal reste dans Code.gs et reservation.js mais est inactif tant que `CONFIG.paypal.clientId` est vide.
+- Paiement (18/11) : **à domicile, en espèces le jour de la séance** (chaque participant règle sa part) ; **en ligne, avant la séance, par virement bancaire ou PayPal** (compte PayPal particulier, envoi manuel par le client) : coordonnées et référence `SAFE-<n° de réservation>` dans l'e-mail de confirmation et dans le rappel de la veille. Coordonnées dans les propriétés du script `PAIEMENT_TITULAIRE`, `PAIEMENT_IBAN`, `PAIEMENT_BIC`, `PAIEMENT_PAYPAL` (jamais dans le dépôt). Paiement en ligne intégré au site (PayPal Checkout) abandonné. Le code PayPal reste dans Code.gs et reservation.js mais est inactif tant que `CONFIG.paypal.clientId` est vide.
 - Annulation : gratuite jusqu'à 24 h avant ; après, due. Dans un groupe, un participant qui annule tard ne paie rien et les autres gardent leur prix. Séance arrêtée pour comportement déplacé ou sécurité : due.
 
 ## 4. Charte graphique
@@ -101,13 +101,13 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 ### Mise en service (compte safeinfocontact@gmail.com)
 1. Google Agenda : créer « Disponibilités SAFE » et « Réservations SAFE » (partager le second avec Adrien). Noter l'ID de chacun (Paramètres > Intégrer l'agenda).
 2. script.google.com > nouveau projet « Réservations SAFE ». Coller `Code.gs` ; Paramètres > afficher le manifeste, coller `appsscript.json`.
-3. `CONFIG` : `agendaDispos`, `agendaReservations`. Propriétés du script : `ADRESSE_DEPART` (adresse de départ, jamais dans le dépôt public), `PAYPAL_SECRET`, `ADMIN_CODE` (code de la page de gestion).
+3. `CONFIG` : `agendaDispos`, `agendaReservations`. Propriétés du script : `ADRESSE_DEPART` (adresse de départ, jamais dans le dépôt public), `ADMIN_CODE` (code de la page de gestion), `PAIEMENT_TITULAIRE`, `PAIEMENT_IBAN`, `PAIEMENT_BIC`, `PAIEMENT_PAYPAL` (coordonnées envoyées pour les séances en ligne).
 4. Exécuter `verifierConfiguration` (autoriser), lire le journal, puis une fois `installerDeclencheurs`.
 5. Déployer > Application Web, exécuter en tant que Moi, accès Tout le monde. Copier l'URL `/exec` dans `assets/js/config.js` (`apiReservation`). Après chaque modification : Gérer les déploiements > Nouvelle version.
 6. (Abandonné le 18/11, pour mémoire) PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
 7. Ouvrir des créneaux : événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
 
-Tests : `node outils/tests/tests.mjs` (22 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
+Tests : `node outils/tests/tests.mjs` (23 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
 
 ## 7. SEO
 
@@ -115,6 +115,7 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 
 ## 8. Journal
 
+- **18/11/2026** : séances en ligne réglées avant la séance par virement ou PayPal (coordonnées dans l'e-mail de confirmation, depuis les propriétés du script) ; annulation à temps : e-mail « À VÉRIFIER » à SAFE pour rembourser un paiement déjà reçu. Tests : 23.
 - **18/11/2026** : PayPal abandonné : paiement en espèces le jour de la séance, pack réglé en espèces et enregistré dans la page de gestion ; textes de l'accueil, des conditions de vente et de la confidentialité mis à jour.
 - **18/11/2026** : page de gestion `/gestion/` (code `ADMIN_CODE`) : annulation d'une séance par SAFE avec remboursement total, packs payés en espèces, liste des packs ; remboursements PayPal automatiques. Tests du backend : 22.
 - **18/11/2026** : lotus refait sur le modèle d'I2TA (numéros, étiquettes, barre de progression) ; réservation : prénom et nom par participant, sexe Femme/Homme sans texte d'aide, réduction première séance vérifiée pour chaque participant, question des tapis inversée. Tests du backend : 19.
