@@ -108,6 +108,7 @@ Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/
 
 ## 8. Journal
 
+- **18/11/2026** : backend installé sur safeinfocontact@gmail.com (projet Apps Script « Réservations SAFE », agendas « Disponibilités SAFE » et « Réservations SAFE », propriété `ADRESSE_DEPART`, déclencheurs), déployé en application Web (version 1) et branché dans `config.js` : fin du mode démonstration. Paiement en espèces seulement tant que PayPal n'est pas configuré. Limite de déplacement portée à 45 km.
 - **17/11/2026** : dépôt `i2taconception/safe` créé, GitHub Pages activé (branche `main`, racine). Ancien dépôt `ihssane-yoga` supprimé.
 - **17/11/2026** : backend de réservation écrit (`apps-script/`) et testé hors ligne ; module de réservation complété (pack, paiement des parts, désinscription, réserver à nouveau). Reste : installation sur le compte Google, PayPal.
 - **17/11/2026** : création du site SAFE à partir de zéro (remplace « Ihssane Yoga ») : accueil FR/EN avec lotus éclaté, offres et tarifs, réservation complète en mode démonstration, charte, mentions légales, conditions de vente, confidentialité. En attente : backend Apps Script, statut (SIRET, assurance, médiateur), domaine.
