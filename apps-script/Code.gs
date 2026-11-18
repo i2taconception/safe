@@ -174,18 +174,22 @@ function calculerDeplacement(adresseTrouvee, metresAller) {
 function deplacement_(adresse) {
   adresse = String(adresse || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 200);
   if (adresse.length < 5) throw erreurUtilisateur_('adresse', 'Adresse introuvable.');
+  // Le cache ne garde que le trajet brut (adresse trouvée, mètres) : zone et prix sont recalculés
+  // à chaque appel, pour qu'un changement de CONFIG ou d'adresse de départ s'applique tout de suite.
   var cache = CacheService.getScriptCache();
-  var cle = 'dep_' + Utilities.base64EncodeWebSafe(adresse.toLowerCase()).slice(0, 200);
-  var deja = cache.get(cle);
-  if (deja) return JSON.parse(deja);
   var depart = PropertiesService.getScriptProperties().getProperty('ADRESSE_DEPART') || CONFIG.departParDefaut;
-  var r = Maps.newDirectionFinder().setOrigin(depart).setDestination(adresse + ', France')
-    .setMode(Maps.DirectionFinder.Mode.DRIVING).setRegion('fr').getDirections();
-  if (!r || r.status !== 'OK' || !r.routes || !r.routes.length) throw erreurUtilisateur_('adresse', 'Adresse introuvable.');
-  var leg = r.routes[0].legs[0];
-  var res = calculerDeplacement(String(leg.end_address || ''), leg.distance.value);
-  res.adresseTrouvee = String(leg.end_address || '');
-  cache.put(cle, JSON.stringify(res), 21600);
+  var cle = 'trajet_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, depart + '|' + adresse.toLowerCase()));
+  var trajet = cache.get(cle) ? JSON.parse(cache.get(cle)) : null;
+  if (!trajet) {
+    var r = Maps.newDirectionFinder().setOrigin(depart).setDestination(adresse + ', France')
+      .setMode(Maps.DirectionFinder.Mode.DRIVING).setRegion('fr').getDirections();
+    if (!r || r.status !== 'OK' || !r.routes || !r.routes.length) throw erreurUtilisateur_('adresse', 'Adresse introuvable.');
+    var leg = r.routes[0].legs[0];
+    trajet = { a: String(leg.end_address || ''), m: leg.distance.value };
+    cache.put(cle, JSON.stringify(trajet), 21600);
+  }
+  var res = calculerDeplacement(trajet.a, trajet.m);
+  res.adresseTrouvee = trajet.a;
   return res;
 }
 
