@@ -90,13 +90,13 @@
       partPayee: 'Votre part est déjà réglée. Merci\u00a0!', partNonPayable: 'Cette part se règle en espèces le jour de la séance.',
       partOk: 'Paiement reçu, merci\u00a0! Un e-mail de confirmation vous a été envoyé.', partAnnulee: 'Cette séance ou cette participation est annulée.',
       repriseInfo: 'Vos informations sont pré-remplies. Vérifiez-les, puis choisissez votre créneau.',
-      lienPack: 'Acheter un pack de 11 séances au prix de 10',
+      lienPack: 'Pack de 11 séances au prix de 10\u00a0: réglé en espèces, demandez-le lors d\'une séance.',
       packTitre: 'Acheter un pack', packIntro: '11 séances au prix de 10, valables 1 an, pour une durée et un format. Paiement en une fois en ligne. Vous recevez votre code par e-mail.',
       packFormat: 'Format', packDuree: 'Durée', packTaille: 'Nombre de personnes', seul: 'Seul', aDeux: 'À 2', troisSix: 'De 3 à 6',
       packPrix: function (m, pp) { return 'Prix du pack\u00a0: <strong>' + m + '</strong> (11 séances à ' + pp + ' par personne, la 11e incluse).'; },
       packNom: 'Nom et prénom', acheterPack: 'Payer le pack', simulerPack: 'Simuler le paiement du pack',
       packOk: function (c) { return 'Merci\u00a0! Votre code de pack est <strong>' + c + '</strong>. Il vous a aussi été envoyé par e-mail.'; },
-      packIndispo: 'L\'achat d\'un pack se fait par paiement en ligne, pas encore disponible. Écrivez-nous pour l\'acheter.',
+      packIndispo: 'Le pack se règle en espèces, en une fois, lors d\'une séance. Vous recevez ensuite votre code par e-mail. Une question\u00a0? Écrivez-nous\u00a0:',
       packTaillePers: 'Le pack vaut pour la personne qui réserve, sur des séances de ce nombre de personnes.'
     },
     en: {
@@ -170,13 +170,13 @@
       partPayee: 'Your share is already paid. Thank you!', partNonPayable: 'This share is paid in cash on the day.',
       partOk: 'Payment received, thank you! A confirmation email has been sent to you.', partAnnulee: 'This session or this place has been cancelled.',
       repriseInfo: 'Your details are pre-filled. Check them, then choose your time slot.',
-      lienPack: 'Buy a pack of 11 sessions for the price of 10',
+      lienPack: 'Pack of 11 sessions for the price of 10: paid in cash, ask for it during a session.',
       packTitre: 'Buy a pack', packIntro: '11 sessions for the price of 10, valid for 1 year, for one length and format. Paid once online. You receive your code by email.',
       packFormat: 'Format', packDuree: 'Length', packTaille: 'Number of people', seul: 'Alone', aDeux: '2 people', troisSix: '3 to 6',
       packPrix: function (m, pp) { return 'Pack price: <strong>' + m + '</strong> (11 sessions at ' + pp + ' per person, the 11th included).'; },
       packNom: 'Full name', acheterPack: 'Pay for the pack', simulerPack: 'Simulate pack payment',
       packOk: function (c) { return 'Thank you! Your pack code is <strong>' + c + '</strong>. It has also been sent to you by email.'; },
-      packIndispo: 'Packs are paid online, which is not available yet. Write to us to buy one.',
+      packIndispo: 'The pack is paid in cash, in one go, during a session. You then receive your code by email. Any question? Write to us:',
       packTaillePers: 'The pack is for the person booking, on sessions with this number of people.'
     }
   }[LANG];
@@ -948,7 +948,7 @@
         }
         var pp = a.format === 'enligne' ? c.catalogue.enligne[a.duree] : c.catalogue.domicile[a.duree][a.taille - 1];
         zone.appendChild(el('<div class="encadre"><p>' + TXT.packPrix(euros(pp * c.catalogue.pack.payees), euros(pp)) + '</p></div>'));
-        if (!enLignePossible()) { zone.appendChild(el('<p class="statut ko">' + TXT.packIndispo + ' <a href="mailto:' + esc(cfg.emailContact) + '">' + esc(cfg.emailContact) + '</a></p>')); return; }
+        if (!enLignePossible()) { zone.appendChild(el('<p class="">' + TXT.packIndispo + ' <a href="mailto:' + esc(cfg.emailContact) + '">' + esc(cfg.emailContact) + '</a></p>')); return; }
         var f = el('<div class="grille-champs"><div class="champ"><label for="pk-nom">' + TXT.packNom + '</label><input id="pk-nom" autocomplete="name" required value="' + esc(a.nom) + '"></div>' +
           '<div class="champ"><label for="pk-email">' + TXT.email + '</label><input id="pk-email" type="email" autocomplete="email" required value="' + esc(a.email) + '"></div></div>');
         f.querySelector('#pk-nom').addEventListener('input', function (e) { a.nom = e.target.value; });
@@ -1025,7 +1025,7 @@
     if (params.get('reprise') && params.get('cle')) {
       get({ action: 'reprise', id: params.get('reprise'), cle: params.get('cle') }).then(function (r) { if (r.ok) appliquerReprise(r.reprise); });
     } else if (fmt === 'domicile' || fmt === 'enligne') { etat.format = fmt; etapeFormat(); etapePersonnes(false); recap(); }
-    var lienPack = el('<p class="petit" style="margin-top:1.5rem"><a href="?pack=1">' + TXT.lienPack + '</a></p>');
+    var lienPack = el('<p class="petit discret" style="margin-top:1.5rem">' + TXT.lienPack + '</p>');
     racine.appendChild(lienPack);
   }).catch(function () {
     racine.innerHTML = '<p class="statut ko">' + TXT.erreurChargement + ' <a href="mailto:' + esc(cfg.emailContact || '') + '">' + esc(cfg.emailContact || '') + '</a></p>';
