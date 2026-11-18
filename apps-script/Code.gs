@@ -22,7 +22,7 @@
 // ============================================================
 var CONFIG = {
   nomSite: 'SAFE',
-  urlSite: 'https://i2taconception.github.io/safe',   // sans / final ; https://safewellbeing.fr au branchement du domaine
+  urlSite: 'https://safewellbeing.fr',   // sans / final
   emailProprietaire: 'safeinfocontact@gmail.com',      // reçoit les notifications
   fuseau: 'Europe/Paris',
 

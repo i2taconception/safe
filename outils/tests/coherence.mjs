@@ -36,7 +36,7 @@ for (const p of pages) {
   const h = fs.readFileSync(p, 'utf8');
   for (const m of h.matchAll(/(?:href|src)="([^"#:?]+)(?:[#?][^"]*)?"/g)) {
     let u = m[1]; if (!u || u.startsWith('//')) continue;
-    const cible = u.startsWith('/safe/') ? path.join(R, u.slice(6)) : path.resolve(path.dirname(p), u);
+    const cible = u.startsWith('/') ? path.join(R, u.slice(1)) : path.resolve(path.dirname(p), u);
     const ok = fs.existsSync(cible) && (fs.statSync(cible).isFile() || fs.existsSync(path.join(cible, 'index.html')));
     if (!ok) ko(`${path.relative(R, p)} : lien cassé ${u}`);
   }
@@ -52,7 +52,7 @@ for (const p of pages) {
   if (/noindex/.test(h)) continue;
   const d = (h.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
   if (d.length < 120 || d.length > 165) ko(`${rel} : description de ${d.length} caractères`);
-  const loc = 'https://i2taconception.github.io/safe/' + rel.replace(/index\.html$/, '');
+  const loc = 'https://safewellbeing.fr/' + rel.replace(/index\.html$/, '');
   if (!sitemap.includes('<loc>' + loc + '</loc>')) ko(`${rel} absente du sitemap`);
 }
 console.log(erreurs ? `${erreurs} problème(s).` : `OK : ${pages.length} pages contrôlées.`);

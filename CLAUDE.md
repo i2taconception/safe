@@ -8,7 +8,7 @@ Fiche de référence du site. Toute session (Claude ou humaine) la lit avant de 
 - **Offre au lancement** : SAFE Yoga seulement (Hatha, Vinyasa, Yin, respiration, méditation, relaxation, étirements). SAFE Mind, SAFE Care et SAFE Balance sont affichés « En développement ».
 - **Où** : à domicile depuis Marseille 9e (Marseille, Aix-en-Provence, Aubagne, 45 km de route maximum) ou en ligne (visio, monde entier).
 - **Langues** : site et séances en français et en anglais.
-- **Domaine prévu** : safewellbeing.fr (pas encore acheté). Adresse provisoire : https://i2taconception.github.io/safe/
+- **Domaine** : https://safewellbeing.fr/ (acheté chez OVH le 18/11/2026, 3 ans, renouvellement en novembre 2029, DNSSEC ; titulaire : voir SAFE-suivi). Fichier `CNAME` à la racine. Ancienne adresse https://i2taconception.github.io/safe/ redirigée par GitHub.
 - **Contact** : safeinfocontact@gmail.com (compte Google dédié : agenda, e-mails).
 
 ## 2. Règles à respecter (non négociables)
@@ -111,10 +111,13 @@ Tests : `node outils/tests/tests.mjs` (24 tests du backend, agendas, Maps et Pay
 
 ## 7. SEO
 
-Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/EN, Open Graph. Données structurées `HealthAndBeautyBusiness` et `FAQPage` sur les accueils. Au branchement du domaine : remplacer `https://i2taconception.github.io/safe/` partout (pages, sitemap, robots, `URL` de `generer_pages.py`) et les chemins `/safe/` de la page 404, ajouter le fichier `CNAME`.
+Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/EN, Open Graph. Données structurées `HealthAndBeautyBusiness` et `FAQPage` sur les accueils. Adresse de référence : `https://safewellbeing.fr/` (pages, sitemap, robots, `URL` de `generer_pages.py`, `CONFIG.urlSite` de Code.gs). La page 404 utilise des chemins absolus `/`.
+
+DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:8000::153 à 2606:50c0:8003::153, CNAME `www` vers `i2taconception.github.io.` ; ne pas toucher aux entrées MX/SPF de la boîte Zimbra.
 
 ## 8. Journal
 
+- **18/11/2026** : domaine safewellbeing.fr acheté chez OVH ; adresses du site, sitemap, robots, page 404 et `CONFIG.urlSite` passés sur https://safewellbeing.fr/, fichier `CNAME`.
 - **18/11/2026** : battement selon la zone (en ligne 0, Marseille 30 min, hors Marseille 1 h) ; réduction première séance vérifiée par prénom + nom + e-mail, e-mail demandé aux participants qui cochent la case. Tests : 24.
 - **18/11/2026** : séances en ligne réglées avant la séance par PayPal seulement (adresse dans l'e-mail de confirmation, depuis la propriété `PAIEMENT_PAYPAL` ; RIB écarté) ; annulation à temps : e-mail « À VÉRIFIER » à SAFE pour rembourser un paiement déjà reçu. Tests : 23.
 - **18/11/2026** : PayPal abandonné : paiement en espèces le jour de la séance, pack réglé en espèces et enregistré dans la page de gestion ; textes de l'accueil, des conditions de vente et de la confidentialité mis à jour.

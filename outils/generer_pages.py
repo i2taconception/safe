@@ -14,7 +14,7 @@ puis le contenu de <main>. Lancer : python3 outils/generer_pages.py
 """
 import os, re, glob
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-URL = 'https://i2taconception.github.io/safe/'   # à remplacer par https://safewellbeing.fr/ au branchement du domaine
+URL = 'https://safewellbeing.fr/'
 
 NAV = {
  'fr': [('#offres','Offres'),('#approche','Approche'),('#lieux','Où&nbsp;?'),('#questions','Questions')],
@@ -49,7 +49,7 @@ def page(meta, contenu):
     robots = '' if meta.get('indexer', 'oui') == 'oui' else '<meta name="robots" content="noindex">\n'
     canon = f'<link rel="canonical" href="{url}">\n' if meta.get('indexer', 'oui') == 'oui' else ''
     if meta['chemin'] == '404.html':
-        r = '/safe/'  # la page 404 est servie à n'importe quelle adresse : chemins absolus (à remplacer par / avec le domaine)
+        r = '/'  # la page 404 est servie à n'importe quelle adresse : chemins absolus
     lien_autre = r + (alt if alt is not None else T[autre]['home'])
     langues = ('<span aria-current="true" lang="fr">FR</span><a href="%s" lang="en" hreflang="en">EN</a>' % lien_autre) if lang == 'fr' else \
               ('<a href="%s" lang="fr" hreflang="fr">FR</a><span aria-current="true" lang="en">EN</span>' % lien_autre)
