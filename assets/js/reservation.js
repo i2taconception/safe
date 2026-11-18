@@ -60,7 +60,7 @@
       payerEnLigne: 'En ligne maintenant', payerEnLigneAide: 'PayPal ou carte bancaire, sans compte PayPal.',
       lienEmail: 'Lien de paiement par e-mail', lienEmailAide: 'PayPal ou carte, à régler au plus tard 24 h avant.',
       especes: 'En espèces le jour de la séance', especesAide: 'Le montant exact est apprécié.',
-      virement: 'Virement bancaire ou PayPal, avant la séance', virementAide: 'Nos coordonnées de paiement vous sont envoyées dans l\'e-mail de confirmation.',
+      virement: 'PayPal, avant la séance', virementAide: 'Notre adresse PayPal vous est envoyée dans l\'e-mail de confirmation.',
       emailParticipant: function (p) { return 'E-mail de ' + p; },
       confirmer: 'Confirmer la réservation', envoi: 'Réservation en cours…',
       simuler: 'Simuler le paiement en ligne', paypalChargement: 'Chargement du paiement sécurisé…',
@@ -141,7 +141,7 @@
       payerEnLigne: 'Online now', payerEnLigneAide: 'PayPal or bank card, no PayPal account needed.',
       lienEmail: 'Payment link by email', lienEmailAide: 'PayPal or card, to be paid at least 24 hours before.',
       especes: 'Cash on the day', especesAide: 'The exact amount is appreciated.',
-      virement: 'Bank transfer or PayPal, before the session', virementAide: 'Our payment details are sent to you in the confirmation email.',
+      virement: 'PayPal, before the session', virementAide: 'Our PayPal address is sent to you in the confirmation email.',
       emailParticipant: function (p) { return p + '’s email'; },
       confirmer: 'Confirm booking', envoi: 'Booking…',
       simuler: 'Simulate online payment', paypalChargement: 'Loading secure payment…',
@@ -664,7 +664,7 @@
     var enLigne = enLignePossible();
     etat.participants.slice(0, etat.nb).forEach(function (p, i) {
       if (!enLigne && (p.mode === 'enligne' || p.mode === 'lien')) p.mode = 'especes';
-      // Séance en ligne : pas d'espèces possibles, paiement par virement ou PayPal avant la séance.
+      // Séance en ligne : pas d'espèces possibles, paiement par PayPal avant la séance (mode interne « virement »).
       if (etat.format === 'enligne' && p.mode === 'especes') p.mode = 'virement';
       if (etat.format === 'domicile' && p.mode === 'virement') p.mode = 'especes';
       if (i === 0 && p.mode === 'lien') p.mode = 'enligne';

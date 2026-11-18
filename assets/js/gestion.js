@@ -16,7 +16,7 @@
     return fetch(API, { method: 'POST', body: JSON.stringify(corps) }).then(function (r) { return r.json(); });
   }
   var STATUTS = { paye: 'payé en ligne', a_regler: 'à régler', sans_objet: 'rien à payer', annule: 'annulé', rembourse: 'remboursé' };
-  var MODES = { enligne: 'PayPal', lien: 'lien PayPal', especes: 'espèces', pack: 'pack', virement: 'virement ou PayPal avant la séance' };
+  var MODES = { enligne: 'PayPal', lien: 'lien PayPal', especes: 'espèces', pack: 'pack', virement: 'PayPal avant la séance' };
 
   if (!API) { err.hidden = false; err.textContent = 'Le site est en mode démonstration : la gestion n\'est pas disponible.'; form.querySelector('button').disabled = true; return; }
 
