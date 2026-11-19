@@ -119,6 +119,7 @@ E-mail pro (19/11) : boîte Zimbra Starter **contact@safewellbeing.fr** (organis
 
 ## 8. Journal
 
+- **19/11/2026** : réservation de test réelle réussie de bout en bout (créneau ouvert depuis la gestion, réservation en ligne, e-mail de SAFE <contact@safewellbeing.fr>, Paiement reçu, annulation). Programme version 10 ; `PAIEMENT_PAYPAL` = contact@safewellbeing.fr.
 - **19/11/2026** : boîte contact@safewellbeing.fr (Zimbra OVH), transfert vers Gmail, filtre anti-spam Gmail, DMARC. Alias Gmail ajouté par Adrien ; adresse affichée sur tout le site passée à contact@safewellbeing.fr ; e-mails aux clients envoyés au nom de contact@ (service Gmail, `gmail.send`). Tests : 27.
 - **19/11/2026** : accès discret à la page de gestion : petit lotus en pied de page, sur toutes les pages.
 - **19/11/2026** : bouton « Paiement reçu » dans la page de gestion (paiements PayPal des séances en ligne, suivi manuel ; automatique prévu avec un compte PayPal Professionnel après le SIRET). Adresse PayPal changée dans la propriété `PAIEMENT_PAYPAL`. Tests : 26.
