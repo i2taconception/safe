@@ -133,3 +133,42 @@ for src in sorted(glob.glob(os.path.join(RACINE, 'outils/pages/*.html'))):
     os.makedirs(os.path.dirname(dest) or RACINE, exist_ok=True)
     open(dest, 'w', encoding='utf-8').write(html)
     print('écrit', meta['chemin'])
+
+
+# FAQ des accueils : les données structurées FAQPage sont reconstruites à partir des questions visibles.
+import json, html as _html, subprocess, datetime
+
+def _texte(x):
+    return re.sub(r'\s+', ' ', _html.unescape(re.sub(r'<[^>]+>', '', x))).replace(' ', ' ').strip()
+
+for accueil in ('index.html', 'en/index.html'):
+    f = os.path.join(RACINE, accueil)
+    s = open(f, encoding='utf-8').read()
+    zone = s[s.find('id="questions"'):]
+    qr = re.findall(r'<details><summary>(.*?)</summary>\s*(.*?)</details>', zone, re.S)
+    donnees = {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
+        {'@type': 'Question', 'name': _texte(q), 'acceptedAnswer': {'@type': 'Answer', 'text': _texte(r)}} for q, r in qr]}
+    bloc = json.dumps(donnees, ensure_ascii=False, indent=2)
+    s2 = re.sub(r'<script type="application/ld\+json">\s*\{\s*"@context": "https://schema.org",\s*"@type": "FAQPage".*?</script>',
+                lambda m: '<script type="application/ld+json">\n' + bloc + '\n</script>', s, count=1, flags=re.S)
+    if s2 != s:
+        open(f, 'w', encoding='utf-8').write(s2); print('FAQ synchronisée', accueil, len(qr), 'questions')
+
+# Plan du site : date de dernière modification de chaque page (date du dernier commit, ou aujourd'hui si modifiée).
+def _date(chemin):
+    try:
+        if subprocess.run(['git', 'status', '--porcelain', '--', chemin], cwd=RACINE, capture_output=True, text=True).stdout.strip():
+            return datetime.date.today().isoformat()
+        d = subprocess.run(['git', 'log', '-1', '--format=%cs', '--', chemin], cwd=RACINE, capture_output=True, text=True).stdout.strip()
+        return d or datetime.date.today().isoformat()
+    except Exception:
+        return datetime.date.today().isoformat()
+
+f = os.path.join(RACINE, 'sitemap.xml')
+s = open(f, encoding='utf-8').read()
+def _maj(m):
+    chemin = m.group(1).replace(URL, '', 1) + 'index.html'
+    return '<loc>' + m.group(1) + '</loc><lastmod>' + _date(chemin) + '</lastmod>'
+s2 = re.sub(r'<loc>([^<]+)</loc><lastmod>[^<]*</lastmod>', _maj, s)
+if s2 != s:
+    open(f, 'w', encoding='utf-8').write(s2); print('sitemap.xml : dates mises à jour')

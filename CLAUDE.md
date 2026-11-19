@@ -111,7 +111,7 @@ Tests : `node outils/tests/tests.mjs` (28 tests du backend, agendas, Maps et Pay
 
 ## 7. SEO
 
-Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/EN, Open Graph. Données structurées `HealthAndBeautyBusiness` et `FAQPage` sur les accueils. Adresse de référence : `https://safewellbeing.fr/` (pages, sitemap, robots, `URL` de `generer_pages.py`, `CONFIG.urlSite` de Code.gs). La page 404 utilise des chemins absolus `/`.
+Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/EN, Open Graph. Données structurées `HealthAndBeautyBusiness` et `FAQPage` sur les accueils. Le SEO passe par la FAQ (choix du 19/11 : pas de pages ciblées pour ne pas dénaturer le site) : 13 questions avec quartiers de Marseille, villes autour (Aix, Aubagne, Cassis, La Ciotat, Allauch), styles, prix, pack, en ligne depuis l'étranger. Le bloc `FAQPage` est reconstruit à partir des questions visibles par `generer_pages.py` (ne pas l'écrire à la main), qui met aussi à jour les `<lastmod>` du sitemap. Les prix cités dans la FAQ sont dans des `<span data-prix>` contrôlés par le test. Adresse de référence : `https://safewellbeing.fr/` (pages, sitemap, robots, `URL` de `generer_pages.py`, `CONFIG.urlSite` de Code.gs). La page 404 utilise des chemins absolus `/`.
 
 DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:8000::153 à 2606:50c0:8003::153, CNAME `www` vers `i2taconception.github.io.` ; ne pas toucher aux entrées MX/SPF/DKIM de la boîte Zimbra. DMARC `_dmarc` : `v=DMARC1;p=none;` (19/11). TXT `google-site-verification=…` à la racine : validation Google Search Console, **ne pas supprimer**.
 
@@ -121,6 +121,7 @@ E-mail pro (19/11) : boîte Zimbra Starter **contact@safewellbeing.fr** (organis
 
 ## 8. Journal
 
+- **19/11/2026** : SEO par la FAQ des accueils FR/EN (6 questions ajoutées, réponse « réserver à plusieurs » corrigée : espèces) ; `FAQPage` et dates du sitemap générés automatiquement.
 - **19/11/2026** : Google Search Console : domaine validé (TXT OVH), sitemap envoyé.
 - **19/11/2026** : page de gestion : séances annulées masquées par défaut, bouton « Supprimer » (définitif) pour les séances annulées. Tests : 28.
 - **19/11/2026** : réservation de test réelle réussie de bout en bout (créneau ouvert depuis la gestion, réservation en ligne, e-mail de SAFE <contact@safewellbeing.fr>, Paiement reçu, annulation). Programme version 10 ; `PAIEMENT_PAYPAL` = contact@safewellbeing.fr.
