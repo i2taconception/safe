@@ -409,4 +409,42 @@ test('gestion : disponibilités ajoutées, répétées chaque semaine, retirées
   assert.equal(libres('enligne').length, 0);
 });
 
+test('gestion : paiement PayPal reçu enregistré, client prévenu, rappel sans demande de paiement, remboursement à faire si annulation', () => {
+  const sim = preparer();
+  const C = 'lotus-rose-2026';
+  sim.proprietes.set('ADMIN_CODE', C); sim.proprietes.set('PAIEMENT_PAYPAL', 'paiement@exemple.fr');
+  const r = sim.post(demande(sim, { format: 'enligne', tapis: 0, adresse: null, participants: [part('Zoé', 'femme', { paiement: 'virement', nom: 'Durand' })],
+    client: { nom: 'Durand', email: 'zoe@exemple.fr', tel: '0611223344' } }));
+  assert.equal(r.ok, true);
+  const id = sim.agendas.resas.at(-1).extendedProperties.private.resaId;
+  assert.equal(sim.post({ action: 'admin_paiement_recu', code: 'faux', id, p: 0 }).code, 'code');
+  let s = sim.post({ action: 'admin_liste', code: C }).seances[0];
+  assert.equal(s.participants[0].mode, 'virement'); assert.equal(s.participants[0].statut, 'a_regler');
+  sim.emails.length = 0;
+  const p = sim.post({ action: 'admin_paiement_recu', code: C, id, p: 0 });
+  assert.equal(p.ok, true); assert.equal(p.prevenu, true);
+  const mail = sim.emails.find(m => m.to === 'zoe@exemple.fr');
+  assert.match(mail.subject, /Paiement reçu/); assert.match(mail.htmlBody, /25 €/);
+  assert.equal(sim.post({ action: 'admin_liste', code: C }).seances[0].participants[0].statut, 'recu');
+  assert.match(sim.agendas.resas.at(-1).description, /payé par PayPal 25 €/);
+  assert.equal(sim.post({ action: 'admin_paiement_recu', code: C, id, p: 0 }).deja, true);
+  // Le rappel de la veille ne redemande pas le paiement
+  const ev = sim.agendas.resas.at(-1), dt = Date.now() + 20 * 3600e3;
+  ev.start.dateTime = new Date(dt).toISOString(); ev.end.dateTime = new Date(dt + 3600e3).toISOString();
+  sim.emails.length = 0; sim.contexte.envoyerRappels();
+  const rappel = sim.emails.find(m => m.to === 'zoe@exemple.fr');
+  assert.ok(rappel); assert.doesNotMatch(rappel.htmlBody, /paiement@exemple\.fr/);
+  // Annulation par SAFE : remboursement à faire à la main
+  ev.start.dateTime = new Date(Date.now() + 72 * 3600e3).toISOString(); ev.end.dateTime = new Date(Date.now() + 73 * 3600e3).toISOString();
+  sim.emails.length = 0;
+  assert.equal(sim.post({ action: 'admin_annuler', code: C, id }).ok, true);
+  const safe = sim.emails.find(m => m.to === 'safe@test.fr').body;
+  assert.match(safe, /À FAIRE : rembourser 25 € à Zoé Durand dans PayPal/); assert.doesNotMatch(safe, /À VÉRIFIER/);
+  assert.match(sim.emails.find(m => m.to === 'zoe@exemple.fr').htmlBody, /remboursé en totalité/);
+  // Une séance à domicile en espèces n'a pas de bouton « Paiement reçu »
+  const r2 = sim.post(demande(sim));
+  const id2 = sim.agendas.resas.at(-1).extendedProperties.private.resaId;
+  assert.equal(r2.ok, true); assert.equal(sim.post({ action: 'admin_paiement_recu', code: C, id: id2, p: 0 }).code, 'mode');
+});
+
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ', des échecs ci-dessus' : ''));

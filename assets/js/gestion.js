@@ -15,7 +15,7 @@
     corps.code = code; corps.lang = corps.lang || 'fr';
     return fetch(API, { method: 'POST', body: JSON.stringify(corps) }).then(function (r) { return r.json(); });
   }
-  var STATUTS = { paye: 'payé en ligne', a_regler: 'à régler', sans_objet: 'rien à payer', annule: 'annulé', rembourse: 'remboursé' };
+  var STATUTS = { paye: 'payé en ligne', recu: 'payé (reçu sur PayPal)', a_regler: 'à régler', sans_objet: 'rien à payer', annule: 'annulé', rembourse: 'remboursé' };
   var MODES = { enligne: 'PayPal', lien: 'lien PayPal', especes: 'espèces', pack: 'pack', virement: 'PayPal avant la séance' };
 
   if (!API) { err.hidden = false; err.textContent = 'Le site est en mode démonstration : la gestion n\'est pas disponible.'; form.querySelector('button').disabled = true; return; }
@@ -149,8 +149,10 @@
     if (!aVenir.length) { s.appendChild(el('<p>Aucune séance réservée pour le moment.</p>')); return s; }
     aVenir.forEach(function (x) {
       var annulee = x.statut !== 'confirmee';
-      var lignes = x.participants.map(function (p) {
-        return '<li>' + esc(p.nom) + ' : ' + esc(MODES[p.mode] || p.mode) + ', ' + esc(STATUTS[p.statut] || p.statut) + (p.montant ? ' (' + euros(p.montant) + ')' : '') + '</li>';
+      var lignes = x.participants.map(function (p, i) {
+        var attente = !annulee && p.mode === 'virement' && p.statut === 'a_regler';
+        return '<li>' + esc(p.nom) + ' : ' + esc(MODES[p.mode] || p.mode) + ', ' + (attente ? '<strong>' : '') + esc(STATUTS[p.statut] || p.statut) + (attente ? '</strong>' : '') + (p.montant ? ' (' + euros(p.montant) + ')' : '') +
+          (attente ? '<div class="paiement" data-i="' + i + '"></div>' : '') + '</li>';
       }).join('');
       var carte = el('<article class="encadre" style="margin-bottom:1rem' + (annulee ? ';opacity:.55' : '') + '">' +
         '<p style="margin:0 0 .3rem;font-weight:650">' + esc(date(x.debut, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })) +
@@ -158,7 +160,9 @@
         (annulee ? ' · <strong>ANNULÉE</strong>' : '') + '</p>' +
         '<ul style="margin:.2rem 0 .5rem">' + lignes + '</ul>' +
         (x.format === 'domicile' ? '<p style="margin:0" class="petit">Tapis à apporter : ' + x.tapis + (x.pack ? ' · Pack ' + esc(x.pack) : '') + '</p>' : '') +
+        (x.participants.some(function (p) { return p.mode === 'virement'; }) ? '<p style="margin:0" class="petit">Référence PayPal attendue : SAFE-' + esc(x.id) + '</p>' : '') +
         '<div class="actions"></div></article>');
+      carte.querySelectorAll('.paiement').forEach(function (z) { boutonPaiement(z, x, Number(z.getAttribute('data-i'))); });
       if (!annulee) {
         var b = el('<button type="button" class="btn btn-clair" style="margin-top:.8rem">Annuler cette séance</button>');
         b.addEventListener('click', function () { confirmerAnnulation(carte.querySelector('.actions'), x); });
@@ -167,6 +171,28 @@
       s.appendChild(carte);
     });
     return s;
+  }
+
+  function boutonPaiement(z, x, i) {
+    var p = x.participants[i];
+    z.innerHTML = '';
+    var b = el('<button type="button" class="btn petit" style="margin:.4rem 0">Paiement reçu</button>');
+    b.addEventListener('click', function () {
+      z.innerHTML = '';
+      var c = el('<div style="margin:.4rem 0"><p class="petit" style="margin:0 0 .4rem">Confirmez que vous avez bien reçu ' + euros(p.montant) + ' de ' + esc(p.nom) + ' sur PayPal. Le client recevra un e-mail « Paiement reçu ».</p>' +
+        '<p style="display:flex;gap:.6rem;flex-wrap:wrap;margin:0"><button type="button" class="btn oui">Oui, reçu</button><button type="button" class="btn btn-clair non">Pas encore</button></p><p class="statut" role="status"></p></div>');
+      c.querySelector('.non').addEventListener('click', function () { boutonPaiement(z, x, i); });
+      c.querySelector('.oui').addEventListener('click', function () {
+        var btn = this, st = c.querySelector('.statut'); btn.disabled = true; st.className = 'statut'; st.textContent = 'Enregistrement…';
+        post({ action: 'admin_paiement_recu', id: x.id, p: i }).then(function (r) {
+          if (!r.ok) { btn.disabled = false; st.className = 'statut ko'; st.textContent = r.message || 'Erreur.'; return; }
+          st.className = 'statut ok'; st.textContent = 'Paiement enregistré' + (r.prevenu ? ', client prévenu par e-mail.' : '.');
+          setTimeout(charger, 2000);
+        }).catch(function () { btn.disabled = false; st.className = 'statut ko'; st.textContent = 'Le serveur ne répond pas. Réessayez.'; });
+      });
+      z.appendChild(c);
+    });
+    z.appendChild(b);
   }
 
   function confirmerAnnulation(zoneActions, x) {

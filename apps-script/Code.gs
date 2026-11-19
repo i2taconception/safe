@@ -108,6 +108,7 @@ function doPost(e) {
       case 'admin_liste':         verifierAdmin_(d.code); return json_(adminListe_());
       case 'admin_pack_especes':  verifierAdmin_(d.code); return json_(adminPackEspeces_(d));
       case 'admin_annuler':       verifierAdmin_(d.code); return json_(adminAnnuler_(d));
+      case 'admin_paiement_recu': verifierAdmin_(d.code); return json_(adminPaiementRecu_(d));
       case 'admin_dispo_ajouter': verifierAdmin_(d.code); return json_(adminDispoAjouter_(d));
       case 'admin_dispo_retirer': verifierAdmin_(d.code); return json_(adminDispoRetirer_(d));
       default:                    return json_({ ok: false, code: 'action', message: 'Action inconnue.' });
@@ -513,6 +514,7 @@ function libellePart_(x, lang) {
   if (x.t === 'rembourse') return en ? 'cancelled, refunded' : 'annulé, remboursé';
   if (x.t === 'sans_objet') return x.m === 'pack' ? (en ? 'pack' : 'pack') : (en ? 'nothing to pay' : 'rien à payer');
   if (x.t === 'paye') return (en ? 'paid online ' : 'payé en ligne ') + m;
+  if (x.t === 'recu') return (en ? 'paid by PayPal ' : 'payé par PayPal ') + m;
   if (x.m === 'lien') return (en ? 'payment link sent, ' : 'lien de paiement envoyé, ') + m;
   if (x.m === 'pack') return (en ? 'pack + travel in cash ' : 'pack + déplacement en espèces ') + m;
   if (x.m === 'virement') return (en ? 'PayPal before the session ' : 'PayPal avant la séance ') + m;
@@ -857,7 +859,7 @@ function annuler_(d) {
     rembourses.forEach(function (x) { lignes.push('Remboursé automatiquement : ' + euros_(x.a) + ' à ' + x.n + '.'); });
     if (q.pack) lignes.push(dansLesDelais ? 'Séance recréditée sur le pack ' + q.pack + '.' : 'Séance décomptée du pack ' + q.pack + ' (annulation tardive).');
     var x0 = JSON.parse(q.p0);
-    if (x0.m === 'virement' && dansLesDelais) lignes.push('À VÉRIFIER : si ' + x0.n + ' a déjà payé par PayPal (réf. SAFE-' + q.resaId + '), lui rembourser ' + euros_(x0.a) + '.');
+    if (x0.m === 'virement' && dansLesDelais) lignes.push(x0.t === 'recu' ? 'À FAIRE : rembourser ' + euros_(x0.a) + ' à ' + x0.n + ' dans PayPal (paiement marqué reçu, réf. SAFE-' + q.resaId + ').' : 'À VÉRIFIER : si ' + x0.n + ' a déjà payé par PayPal (réf. SAFE-' + q.resaId + '), lui rembourser ' + euros_(x0.a) + '.');
     lignes.push('', 'Le créneau est de nouveau libre sur le site.');
     MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Annulation : ' + ev.summary + ', ' + quand, body: lignes.join('\n') });
 
@@ -960,12 +962,13 @@ function adminAnnuler_(d) {
     if (q.statut !== 'confirmee') return { ok: true, dejaAnnulee: true };
     var debut = Date.parse(ev.start.dateTime);
     if (debut <= Date.now()) throw erreurUtilisateur_('passee', 'Cette séance est déjà passée.');
-    var rembourses = [], aRembourser = [], destinataires = [];
+    var rembourses = [], aRembourser = [], manuels = [], destinataires = [];
     for (var i = 0; i < Number(q.nb); i++) {
       var x = JSON.parse(q['p' + i]);
       if (x.t === 'paye') {
         if (paypalRembourser_(x.c, x.a)) { x.t = 'rembourse'; rembourses.push(x); } else aRembourser.push(x);
-      } else if (x.t !== 'rembourse') x.t = 'annule';
+      } else if (x.t === 'recu') { manuels.push(x); x.t = 'annule'; x.ar = 1; }
+      else if (x.t !== 'rembourse') x.t = 'annule';
       q['p' + i] = JSON.stringify(x);
       var email = i === 0 ? q.email : x.e;
       if (email) destinataires.push({ email: email, x: x, i: i });
@@ -982,22 +985,46 @@ function adminAnnuler_(d) {
     aRembourser.forEach(function (x) { lignes.push('À FAIRE : le remboursement automatique a échoué, rembourser ' + euros_(x.a) + ' à ' + x.n + ' dans PayPal (transaction ' + x.c + ').'); });
     if (q.pack) lignes.push('Séance recréditée sur le pack ' + q.pack + '.');
     var v0 = JSON.parse(q.p0);
-    if (v0.m === 'virement') lignes.push('À VÉRIFIER : si ' + v0.n + ' a déjà payé par PayPal (réf. SAFE-' + q.resaId + '), lui rembourser ' + euros_(v0.a) + '.');
+    manuels.forEach(function (x) { lignes.push('À FAIRE : rembourser ' + euros_(x.a) + ' à ' + x.n + ' dans PayPal (paiement marqué reçu, réf. SAFE-' + q.resaId + ').'); });
+    if (v0.m === 'virement' && !v0.ar) lignes.push('À VÉRIFIER : si ' + v0.n + ' a déjà payé par PayPal (réf. SAFE-' + q.resaId + '), lui rembourser ' + euros_(v0.a) + '.');
     lignes.push('Participants prévenus par e-mail : ' + (destinataires.map(function (y) { return y.x.n; }).join(', ') || 'aucun'), '', ev.description || '');
     MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Séance annulée par SAFE : ' + quand, body: lignes.join('\n') });
 
     var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang], qd = libelleDate_(new Date(debut), lang);
     destinataires.forEach(function (y) {
-      var paye = y.x.t === 'rembourse' || aRembourser.indexOf(y.x) >= 0;
+      var paye = y.x.t === 'rembourse' || aRembourser.indexOf(y.x) >= 0 || manuels.indexOf(y.x) >= 0;
       var html = '<p>' + echapper_(tx.bonjour(y.x.f || y.x.n)) + '</p><p>' + tx.corpsAnnulationSafe(qd) + '</p>' +
         (message ? '<p>' + echapper_(message).replace(/\n/g, '<br>') + '</p>' : '') +
         (paye ? '<p>' + tx.rembourseSafe(euros_(y.x.a)) + '</p>' : '') +
-        (y.i === 0 && v0.m === 'virement' ? '<p>' + tx.rembourseVirement + '</p>' : '') +
+        (y.i === 0 && v0.m === 'virement' && !v0.ar ? '<p>' + tx.rembourseVirement + '</p>' : '') +
         (y.i === 0 && q.pack ? '<p>' + tx.packRecredite + '</p>' : '') +
         '<p><a style="color:#742834" href="' + CONFIG.urlSite + (lang === 'en' ? '/en/book/' : '/reserver/') + '">' + tx.reserverMaintenant + '</a></p>';
       MailApp.sendEmail({ to: y.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulationSafe(qd), htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
     });
     return { ok: true, rembourses: rembourses.length, aRembourser: aRembourser.length, prevenus: destinataires.length };
+  });
+}
+
+/** Paiement PayPal reçu (séance en ligne réglée par le client avant la séance) : enregistré par SAFE, le client est prévenu. */
+function adminPaiementRecu_(d) {
+  return avecVerrou_(function () {
+    var ev = trouverEvenement_(d.id), q = ev.extendedProperties.private, i = Number(d.p || 0);
+    if (q.statut !== 'confirmee') throw erreurUtilisateur_('annulee', 'Cette séance est annulée.');
+    if (!(i >= 0 && i < Number(q.nb))) throw erreurUtilisateur_('participant', 'Participant introuvable.');
+    var x = JSON.parse(q['p' + i]);
+    if (x.t === 'recu') return { ok: true, deja: true };
+    if (x.m !== 'virement' || x.t !== 'a_regler') throw erreurUtilisateur_('mode', 'Ce participant ne règle pas par PayPal avant la séance.');
+    x.t = 'recu'; x.r = new Date().toISOString();
+    q['p' + i] = JSON.stringify(x);
+    Calendar.Events.patch({ description: majDescription_(ev.description, q), extendedProperties: { private: q } }, CONFIG.agendaReservations, ev.id, { sendUpdates: 'none' });
+    var email = i === 0 ? q.email : x.e;
+    if (email) {
+      var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang];
+      MailApp.sendEmail({ to: email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetPaiementRecu,
+        htmlBody: gabaritEmail_(tx.titrePaiementRecu, '<p>' + echapper_(tx.bonjour(x.f || x.n)) + '</p><p>' +
+          tx.corpsPaiementRecu(euros_(x.a), libelleDate_(new Date(Date.parse(ev.start.dateTime)), lang)) + '</p>', lang) });
+    }
+    return { ok: true, prevenu: !!email };
   });
 }
 
@@ -1180,6 +1207,8 @@ var TEXTES = {
     sujetPartPayee: 'Votre part est réglée', partPayee: function (m, q) { return 'Nous avons bien reçu votre paiement de ' + m + ' pour la séance du ' + q + '. Merci !'; },
     sujetPack: 'Votre pack SAFE Yoga', reserverMaintenant: 'Réserver une séance',
     rembourseVirement: 'Si vous avez déjà payé par PayPal, nous vous remboursons dans les prochains jours.',
+    sujetPaiementRecu: 'Paiement reçu : votre séance SAFE', titrePaiementRecu: 'Paiement reçu',
+    corpsPaiementRecu: function (m, q) { return 'Nous avons bien reçu votre paiement PayPal de ' + m + ' pour votre séance du ' + q + '. Merci, et à bientôt.'; },
     paiementTitre: 'Paiement avant la séance', paiementIntro: function (m, ref) { return 'Merci de régler <strong>' + m + '</strong> avant la séance, par PayPal, en indiquant la référence <strong>' + ref + '</strong>.'; },
     titulaire: 'Titulaire', paypal: 'PayPal', paiementPlusTard: 'Nous vous envoyons notre adresse PayPal par e-mail.',
     sujetAnnulationSafe: function (q) { return 'Séance SAFE annulée : ' + q; },
@@ -1218,6 +1247,8 @@ var TEXTES = {
     sujetPartPayee: 'Your share is paid', partPayee: function (m, q) { return 'We have received your payment of ' + m + ' for the session on ' + q + '. Thank you!'; },
     sujetPack: 'Your SAFE Yoga pack', reserverMaintenant: 'Book a session',
     rembourseVirement: 'If you have already paid by PayPal, we will refund you in the coming days.',
+    sujetPaiementRecu: 'Payment received: your SAFE session', titrePaiementRecu: 'Payment received',
+    corpsPaiementRecu: function (m, q) { return 'We have received your PayPal payment of ' + m + ' for your session on ' + q + '. Thank you, see you soon.'; },
     paiementTitre: 'Payment before the session', paiementIntro: function (m, ref) { return 'Please pay <strong>' + m + '</strong> before the session, by PayPal, with the reference <strong>' + ref + '</strong>.'; },
     titulaire: 'Account holder', paypal: 'PayPal', paiementPlusTard: 'We will send you our PayPal address by email.',
     sujetAnnulationSafe: function (q) { return 'SAFE session cancelled: ' + q; },
