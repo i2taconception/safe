@@ -121,6 +121,7 @@ E-mail pro (19/11) : boîte Zimbra Starter **contact@safewellbeing.fr** (organis
 
 ## 8. Journal
 
+- **19/11/2026** : e-mail de confirmation et rappel : explication du paiement PayPal (« Envoyer », adresse, référence = numéro de réservation à écrire dans le message). Programme version 12.
 - **19/11/2026** : FAQ « Comment payer une séance en ligne par PayPal ? » et aide du formulaire clarifiée (la référence SAFE-… est le numéro de réservation, à écrire dans le message du paiement) : une testeuse ne comprenait pas.
 - **19/11/2026** : SEO par la FAQ des accueils FR/EN (6 questions ajoutées, réponse « réserver à plusieurs » corrigée : espèces) ; `FAQPage` et dates du sitemap générés automatiquement.
 - **19/11/2026** : Google Search Console : domaine validé (TXT OVH), sitemap envoyé.
