@@ -113,12 +113,15 @@ Tests : `node outils/tests/tests.mjs` (28 tests du backend, agendas, Maps et Pay
 
 Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/EN, Open Graph. Données structurées `HealthAndBeautyBusiness` et `FAQPage` sur les accueils. Adresse de référence : `https://safewellbeing.fr/` (pages, sitemap, robots, `URL` de `generer_pages.py`, `CONFIG.urlSite` de Code.gs). La page 404 utilise des chemins absolus `/`.
 
-DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:8000::153 à 2606:50c0:8003::153, CNAME `www` vers `i2taconception.github.io.` ; ne pas toucher aux entrées MX/SPF/DKIM de la boîte Zimbra. DMARC `_dmarc` : `v=DMARC1;p=none;` (19/11).
+DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:8000::153 à 2606:50c0:8003::153, CNAME `www` vers `i2taconception.github.io.` ; ne pas toucher aux entrées MX/SPF/DKIM de la boîte Zimbra. DMARC `_dmarc` : `v=DMARC1;p=none;` (19/11). TXT `google-site-verification=…` à la racine : validation Google Search Console, **ne pas supprimer**.
+
+Google Search Console (19/11) : propriété de domaine `safewellbeing.fr` sur le compte safeinfocontact@gmail.com, validée par DNS, sitemap `https://safewellbeing.fr/sitemap.xml` envoyé (6 pages découvertes). Pas de mesure d'audience sur le site (GoatCounter écarté par Adrien).
 
 E-mail pro (19/11) : boîte Zimbra Starter **contact@safewellbeing.fr** (organisation « SAFE », nom affiché « SAFE », webmail https://webmail.mail.ovh.net/), DKIM actif, transfert vers safeinfocontact@gmail.com avec copie gardée ; filtre Gmail « to:contact@safewellbeing.fr → jamais en spam ». Envoi depuis Gmail en tant que contact@ : SMTP smtp.mail.ovh.net, port 465, SSL.
 
 ## 8. Journal
 
+- **19/11/2026** : Google Search Console : domaine validé (TXT OVH), sitemap envoyé.
 - **19/11/2026** : page de gestion : séances annulées masquées par défaut, bouton « Supprimer » (définitif) pour les séances annulées. Tests : 28.
 - **19/11/2026** : réservation de test réelle réussie de bout en bout (créneau ouvert depuis la gestion, réservation en ligne, e-mail de SAFE <contact@safewellbeing.fr>, Paiement reçu, annulation). Programme version 10 ; `PAIEMENT_PAYPAL` = contact@safewellbeing.fr.
 - **19/11/2026** : boîte contact@safewellbeing.fr (Zimbra OVH), transfert vers Gmail, filtre anti-spam Gmail, DMARC. Alias Gmail ajouté par Adrien ; adresse affichée sur tout le site passée à contact@safewellbeing.fr ; e-mails aux clients envoyés au nom de contact@ (service Gmail, `gmail.send`). Tests : 27.
