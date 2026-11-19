@@ -102,7 +102,7 @@ def page(meta, contenu):
         <ul>
           <li><a href="{r}{t['book']}">{t['reserver']}</a></li>
           <li><a href="{r}{t['charter']}">{t['charte']}</a></li>
-          <li><a href="mailto:safeinfocontact@gmail.com">safeinfocontact@gmail.com</a></li>
+          <li><a href="mailto:contact@safewellbeing.fr">contact@safewellbeing.fr</a></li>
         </ul>
       </div>
       <div>

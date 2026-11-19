@@ -192,6 +192,7 @@ export function creerSimulateur({ secret = 'secret-test', clientId = 'client-tes
       getUuid: () => crypto.randomUUID(),
       base64Encode: s => Buffer.from(s).toString('base64'),
       base64EncodeWebSafe: s => Buffer.from(s).toString('base64url'),
+      Charset: { UTF_8: 'utf8' },
       DigestAlgorithm: { SHA_256: 'sha256' },
       computeDigest: (alg, s) => crypto.createHash(alg).update(s).digest(),
       newBlob: (data, type, name) => ({ data, type, name })

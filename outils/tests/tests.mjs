@@ -447,4 +447,30 @@ test('gestion : paiement PayPal reçu enregistré, client prévenu, rappel sans 
   assert.equal(r2.ok, true); assert.equal(sim.post({ action: 'admin_paiement_recu', code: C, id: id2, p: 0 }).code, 'mode');
 });
 
+test('e-mails aux clients envoyés au nom de contact@ (Gmail, alias), notifications à SAFE par MailApp', () => {
+  const sim = preparer();
+  const bruts = [];
+  sim.contexte.Gmail = { Users: { Messages: { send: (m, u) => { assert.equal(u, 'me'); bruts.push(Buffer.from(m.raw, 'base64url').toString('utf8')); } } } };
+  const r = sim.post(demande(sim));
+  assert.equal(r.ok, true);
+  assert.ok(bruts.length >= 1);
+  const m = bruts[0];
+  assert.match(m, /^From: SAFE <contact@safewellbeing\.fr>/m);
+  assert.match(m, /^To: lea@exemple\.fr/m);
+  assert.match(m, /^Reply-To: contact@safewellbeing\.fr/m);
+  assert.match(m, /^Subject: =\?UTF-8\?B\?/m);
+  const html = m.split('Content-Type: text/html; charset=UTF-8')[1].split('\r\n\r\n')[1].split('\r\n--')[0];
+  assert.match(Buffer.from(html.replace(/\r\n/g, ''), 'base64').toString('utf8'), /Bonjour Léa/);
+  assert.match(m, /filename="seance-safe\.ics"/);
+  const ics = m.split('filename="seance-safe.ics"')[1].split('\r\n\r\n')[1].split('\r\n--')[0];
+  assert.match(Buffer.from(ics.replace(/\r\n/g, ''), 'base64').toString('utf8'), /BEGIN:VCALENDAR/);
+  assert.ok(sim.emails.some(e => e.to === 'safe@test.fr'));
+  assert.ok(!sim.emails.some(e => e.to === 'lea@exemple.fr'));
+  // Si Gmail refuse : repli sur MailApp, le client reçoit quand même
+  sim.contexte.Gmail = { Users: { Messages: { send: () => { throw new Error('quota'); } } } };
+  sim.emails.length = 0;
+  assert.equal(sim.post(demande(sim, { debut: creneau(sim, 'domicile', 60, 3) })).ok, true);
+  assert.ok(sim.emails.some(e => e.to === 'lea@exemple.fr'));
+});
+
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ', des échecs ci-dessus' : ''));

@@ -24,6 +24,7 @@ var CONFIG = {
   nomSite: 'SAFE',
   urlSite: 'https://safewellbeing.fr',   // sans / final
   emailProprietaire: 'safeinfocontact@gmail.com',      // reçoit les notifications
+  expediteur: 'contact@safewellbeing.fr',             // adresse d'envoi des e-mails aux clients (alias Gmail « Envoyer en tant que », 19/11) ; vide : envoi depuis le compte Google
   fuseau: 'Europe/Paris',
 
   agendaDispos: 'fe7d49da96ee4aba93c35d24e392adbf1e72a0d7bcdcde8f0f9a4917b04e6a2c@group.calendar.google.com',       // agenda « Disponibilités SAFE »
@@ -674,10 +675,10 @@ function paypalValiderPart_(d) {
     Calendar.Events.patch({ extendedProperties: { private: t.priv }, description: majDescription_(t.ev.description, t.priv) },
       CONFIG.agendaReservations, t.ev.id, { sendUpdates: 'none' });
     var debut = new Date(Date.parse(t.ev.start.dateTime));
-    MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Part payée : ' + t.x.n + ', ' + libelleDate_(debut, 'fr'),
+    envoyer_({ to: CONFIG.emailProprietaire, subject: 'Part payée : ' + t.x.n + ', ' + libelleDate_(debut, 'fr'),
       body: t.x.n + ' a payé sa part en ligne (' + euros_(t.x.a) + ', PayPal ' + e.capture.id + ') pour la séance du ' + libelleDate_(debut, 'fr') + '.\n\n' + (t.ev.description || '') });
     var lang = t.priv.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang];
-    if (t.x.e) MailApp.sendEmail({ to: t.x.e, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetPartPayee,
+    if (t.x.e) envoyer_({ to: t.x.e, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetPartPayee,
       htmlBody: gabaritEmail_(tx.sujetPartPayee, '<p>' + echapper_(tx.bonjour(t.x.f || t.x.n)) + '</p><p>' + tx.partPayee(euros_(t.x.a), libelleDate_(debut, lang)) + '</p>', lang) });
     return { ok: true, part: { prenom: t.x.f || t.x.n, montant: t.x.a, statut: 'paye' } };
   });
@@ -772,10 +773,10 @@ function creerPack_(a, paiement, capture) {
             achat: new Date().toISOString(), expire: new Date(Date.now() + CATALOGUE.pack.validiteJours * 86400e3).toISOString(), lang: a.lang };
   PropertiesService.getScriptProperties().setProperty('pack_' + code, JSON.stringify(p));
   var t = TEXTES[a.lang], fin = libelleJour_(new Date(p.expire), a.lang);
-  MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Pack vendu : ' + a.client.nom + ' (' + libellePack_(p, 'fr') + ')',
+  envoyer_({ to: CONFIG.emailProprietaire, subject: 'Pack vendu : ' + a.client.nom + ' (' + libellePack_(p, 'fr') + ')',
     body: 'Pack de ' + p.total + ' séances vendu ' + euros_(a.montant) + (paiement === 'especes' ? ' (payé en espèces, enregistré depuis la page de gestion).' : ' (PayPal ' + capture + ').') + '\n' +
           'Client : ' + a.client.nom + ' <' + a.client.email + '>\nFormule : ' + libellePack_(p, 'fr') + '\nCode : ' + code + '\nValable jusqu\'au ' + libelleJour_(new Date(p.expire), 'fr') });
-  MailApp.sendEmail({ to: a.client.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: t.sujetPack,
+  envoyer_({ to: a.client.email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: t.sujetPack,
     htmlBody: gabaritEmail_(t.sujetPack, '<p>' + echapper_(t.bonjour(a.client.nom)) + '</p><p>' + t.corpsPack(p.total, libellePack_(p, a.lang), code, fin) + '</p>' +
       '<p><a style="color:#742834" href="' + CONFIG.urlSite + (a.lang === 'en' ? '/en/book/' : '/reserver/') + '">' + t.reserverMaintenant + '</a></p>', a.lang) });
   return p;
@@ -861,7 +862,7 @@ function annuler_(d) {
     var x0 = JSON.parse(q.p0);
     if (x0.m === 'virement' && dansLesDelais) lignes.push(x0.t === 'recu' ? 'À FAIRE : rembourser ' + euros_(x0.a) + ' à ' + x0.n + ' dans PayPal (paiement marqué reçu, réf. SAFE-' + q.resaId + ').' : 'À VÉRIFIER : si ' + x0.n + ' a déjà payé par PayPal (réf. SAFE-' + q.resaId + '), lui rembourser ' + euros_(x0.a) + '.');
     lignes.push('', 'Le créneau est de nouveau libre sur le site.');
-    MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Annulation : ' + ev.summary + ', ' + quand, body: lignes.join('\n') });
+    envoyer_({ to: CONFIG.emailProprietaire, subject: 'Annulation : ' + ev.summary + ', ' + quand, body: lignes.join('\n') });
 
     var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang], qd = libelleDate_(new Date(debut), lang);
     var paye0 = JSON.parse(q.p0).t;
@@ -869,11 +870,11 @@ function annuler_(d) {
       (paye0 === 'paye' || paye0 === 'rembourse' ? '<p>' + (dansLesDelais ? tx.rembourse : tx.nonRembourse(CONFIG.annulationHeures)) + '</p>' : '') +
       (x0.m === 'virement' && dansLesDelais ? '<p>' + tx.rembourseVirement + '</p>' : '') +
       (!dansLesDelais && paye0 !== 'paye' && paye0 !== 'rembourse' ? '<p>' + tx.dueTardive(CONFIG.annulationHeures) + '</p>' : '');
-    MailApp.sendEmail({ to: q.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulation, htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
+    envoyer_({ to: q.email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetAnnulation, htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
     for (var j = 1; j < Number(q.nb); j++) {
       var y = JSON.parse(q['p' + j]);
       if (!y.e || y.t === 'annule') continue;
-      MailApp.sendEmail({ to: y.e, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulation,
+      envoyer_({ to: y.e, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetAnnulation,
         htmlBody: gabaritEmail_(tx.titreAnnulation, '<p>' + echapper_(tx.bonjour(y.f || y.n)) + '</p><p>' + tx.corpsAnnulationGroupe(qd) + '</p>' +
           (y.t === 'paye' || y.t === 'rembourse' ? '<p>' + (dansLesDelais ? tx.rembourse : tx.nonRembourse(CONFIG.annulationHeures)) + '</p>' : ''), lang) });
     }
@@ -895,14 +896,14 @@ function annulerParticipant_(t) {
   q['p' + t.i] = JSON.stringify(x);
   Calendar.Events.patch({ extendedProperties: { private: q }, description: majDescription_(ev.description, q) }, CONFIG.agendaReservations, ev.id, { sendUpdates: 'none' });
   var quand = libelleDate_(new Date(debut), 'fr');
-  MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Désinscription : ' + x.n + ', ' + quand,
+  envoyer_({ to: CONFIG.emailProprietaire, subject: 'Désinscription : ' + x.n + ', ' + quand,
     body: x.n + ' se désinscrit de la séance du ' + quand + '. Il ne paie rien et le prix des autres participants ne change pas.\n' +
       (aRembourser ? 'À FAIRE : rembourser ' + euros_(x.a) + ' dans PayPal (transaction ' + x.c + ').\n' : '') +
       (rembourse ? 'Remboursé automatiquement : ' + euros_(x.a) + '.\n' : '') + '\n' + (ev.description || '') });
   var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang];
-  MailApp.sendEmail({ to: q.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetDesinscription(x.n),
+  envoyer_({ to: q.email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetDesinscription(x.n),
     htmlBody: gabaritEmail_(tx.sujetDesinscription(x.n), '<p>' + tx.corpsDesinscription(echapper_(x.n), libelleDate_(new Date(debut), lang)) + '</p>', lang) });
-  if (x.e) MailApp.sendEmail({ to: x.e, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulation,
+  if (x.e) envoyer_({ to: x.e, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetAnnulation,
     htmlBody: gabaritEmail_(tx.titreAnnulation, '<p>' + tx.corpsAnnulation(libelleDate_(new Date(debut), lang)) + '</p>' + (rembourse || aRembourser ? '<p>' + tx.rembourse + '</p>' : ''), lang) });
   return { ok: true, rembourse: rembourse || aRembourser };
 }
@@ -918,7 +919,7 @@ function verifierAdmin_(code) {
   if (bon.length < 10) throw erreurUtilisateur_('admin', 'Accès de gestion non configuré (propriété ADMIN_CODE, 10 caractères au moins).');
   if (String(code || '') !== bon) {
     cache.put('admin_echecs', String(echecs + 1), 3600);
-    if (echecs + 1 >= 5) MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Gestion SAFE bloquée', body: '5 codes faux ont été saisis sur la page de gestion. Elle est bloquée pendant une heure. Si ce n\'était pas vous, changez le code (propriété ADMIN_CODE).' });
+    if (echecs + 1 >= 5) envoyer_({ to: CONFIG.emailProprietaire, subject: 'Gestion SAFE bloquée', body: '5 codes faux ont été saisis sur la page de gestion. Elle est bloquée pendant une heure. Si ce n\'était pas vous, changez le code (propriété ADMIN_CODE).' });
     throw erreurUtilisateur_('code', 'Code incorrect.');
   }
 }
@@ -988,7 +989,7 @@ function adminAnnuler_(d) {
     manuels.forEach(function (x) { lignes.push('À FAIRE : rembourser ' + euros_(x.a) + ' à ' + x.n + ' dans PayPal (paiement marqué reçu, réf. SAFE-' + q.resaId + ').'); });
     if (v0.m === 'virement' && !v0.ar) lignes.push('À VÉRIFIER : si ' + v0.n + ' a déjà payé par PayPal (réf. SAFE-' + q.resaId + '), lui rembourser ' + euros_(v0.a) + '.');
     lignes.push('Participants prévenus par e-mail : ' + (destinataires.map(function (y) { return y.x.n; }).join(', ') || 'aucun'), '', ev.description || '');
-    MailApp.sendEmail({ to: CONFIG.emailProprietaire, subject: 'Séance annulée par SAFE : ' + quand, body: lignes.join('\n') });
+    envoyer_({ to: CONFIG.emailProprietaire, subject: 'Séance annulée par SAFE : ' + quand, body: lignes.join('\n') });
 
     var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang], qd = libelleDate_(new Date(debut), lang);
     destinataires.forEach(function (y) {
@@ -999,7 +1000,7 @@ function adminAnnuler_(d) {
         (y.i === 0 && v0.m === 'virement' && !v0.ar ? '<p>' + tx.rembourseVirement + '</p>' : '') +
         (y.i === 0 && q.pack ? '<p>' + tx.packRecredite + '</p>' : '') +
         '<p><a style="color:#742834" href="' + CONFIG.urlSite + (lang === 'en' ? '/en/book/' : '/reserver/') + '">' + tx.reserverMaintenant + '</a></p>';
-      MailApp.sendEmail({ to: y.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetAnnulationSafe(qd), htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
+      envoyer_({ to: y.email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetAnnulationSafe(qd), htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
     });
     return { ok: true, rembourses: rembourses.length, aRembourser: aRembourser.length, prevenus: destinataires.length };
   });
@@ -1020,7 +1021,7 @@ function adminPaiementRecu_(d) {
     var email = i === 0 ? q.email : x.e;
     if (email) {
       var lang = q.lang === 'en' ? 'en' : 'fr', tx = TEXTES[lang];
-      MailApp.sendEmail({ to: email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: tx.sujetPaiementRecu,
+      envoyer_({ to: email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetPaiementRecu,
         htmlBody: gabaritEmail_(tx.titrePaiementRecu, '<p>' + echapper_(tx.bonjour(x.f || x.n)) + '</p><p>' +
           tx.corpsPaiementRecu(euros_(x.a), libelleDate_(new Date(Date.parse(ev.start.dateTime)), lang)) + '</p>', lang) });
     }
@@ -1169,7 +1170,7 @@ function contact_(d) {
   if (!nom || !message) throw erreurUtilisateur_('contact', 'Nom et message obligatoires.');
   if (!EMAIL_RE.test(email)) throw erreurUtilisateur_('email', 'Adresse e-mail invalide.');
   limiterParEmail_('contact:' + email);
-  MailApp.sendEmail({ to: CONFIG.emailProprietaire, replyTo: email, subject: 'Message du site : ' + nom, body: 'De : ' + nom + ' <' + email + '>\n\n' + message });
+  envoyer_({ to: CONFIG.emailProprietaire, replyTo: email, subject: 'Message du site : ' + nom, body: 'De : ' + nom + ' <' + email + '>\n\n' + message });
   return { ok: true };
 }
 
@@ -1343,7 +1344,7 @@ function notifier_(resa, dem) {
   corps.push('Total : ' + euros_(dem.montants.total));
   if (dem.sante) corps.push('', 'Informations de santé (confidentiel, consentement donné) :', dem.sante);
   corps.push('', 'La séance est dans l\'agenda « Réservations ».', resa.lienEvenement);
-  MailApp.sendEmail({ to: CONFIG.emailProprietaire, replyTo: c.email,
+  envoyer_({ to: CONFIG.emailProprietaire, replyTo: c.email,
     subject: 'Nouvelle réservation : ' + quandFr + ', ' + p0.prenom + ' ' + c.nom + (resa.participants.length > 1 ? ' (' + resa.participants.length + ' pers.)' : ''),
     body: corps.join('\n') });
 
@@ -1356,7 +1357,7 @@ function notifier_(resa, dem) {
   html += '<p>' + t.annuler(CONFIG.annulationHeures) + '<br><a style="color:#742834" href="' + lienSite_(dem.lang, { annulation: resa.id, cle: resa.cle }) + '">' + t.lienAnnuler + '</a></p>' +
     '<p><a style="color:#742834" href="' + lienSite_(dem.lang, { reprise: resa.id, cle: resa.cle }) + '">' + t.lienReprendre + '</a><br><span style="font-size:13px;color:#4A5546">' + t.reprendreAide + '</span></p>' +
     '<p style="color:#4A5546;font-size:13px">' + t.ics + '</p><p>' + t.signature + '<br>SAFE</p>';
-  MailApp.sendEmail({ to: c.email, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire,
+  envoyer_({ to: c.email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire,
     subject: t.sujetConfirmation + ' · ' + libelleDate_(dem.debut, dem.lang), htmlBody: gabaritEmail_(t.titreConfirmation, html, dem.lang),
     attachments: [fichierIcs_(dem, resa)] });
 
@@ -1371,7 +1372,7 @@ function notifier_(resa, dem) {
     else if (x.a > 0) h += '<p>' + t.partEspeces + '</p>';
     h += '<p>' + t.charteRappel + ' <a style="color:#742834" href="' + charte + '">' + charte.replace(/^https?:\/\//, '') + '</a></p>' +
       '<p><a style="color:#742834" href="' + lienSite_(dem.lang, { annulation: resa.id, cle: x.k, p: i }) + '">' + t.seDesinscrire + '</a></p>';
-    MailApp.sendEmail({ to: x.e, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: t.sujetInvitation(p0.prenom),
+    envoyer_({ to: x.e, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: t.sujetInvitation(p0.prenom),
       htmlBody: gabaritEmail_(t.sujetInvitation(p0.prenom), h, dem.lang), attachments: [fichierIcs_(dem, resa)] });
   }
 }
@@ -1397,7 +1398,7 @@ function envoyerRappels() {
       var dest = i === 0 ? q.email : x.e;
       if (!dest) continue;
       var lien = i === 0 ? lienSite_(lang, { annulation: q.resaId, cle: q.cle }) : lienSite_(lang, { annulation: q.resaId, cle: x.k, p: i });
-      MailApp.sendEmail({ to: dest, name: CONFIG.nomSite, replyTo: CONFIG.emailProprietaire, subject: t.sujetRappel,
+      envoyer_({ to: dest, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: t.sujetRappel,
         htmlBody: gabaritEmail_(t.titreRappel, '<p>' + echapper_(t.bonjour(x.f || x.n)) + '</p>' + corps + extra +
           '<p><a style="color:#742834" href="' + lien + '">' + (i === 0 ? t.lienAnnuler : t.seDesinscrire) + '</a></p>', lang) });
     }
@@ -1465,10 +1466,53 @@ function erreur_(err) {
     var cache = CacheService.getScriptCache();
     if (!cache.get('alerte_envoyee')) {
       cache.put('alerte_envoyee', '1', 1800);
-      MailApp.sendEmail(CONFIG.emailProprietaire, '[SAFE] Erreur du système de réservation', String(err && err.stack ? err.stack : err));
+      envoyer_(CONFIG.emailProprietaire, '[SAFE] Erreur du système de réservation', String(err && err.stack ? err.stack : err));
     }
   } catch (e) { /* quota e-mail atteint */ }
   return { ok: false, code: 'serveur', message: 'Une erreur est survenue. Réessayez ou contactez-nous directement.' };
+}
+
+// ============================================================
+// ENVOI DES E-MAILS
+// ============================================================
+/**
+ * Envoie un e-mail. Aux clients : au nom de CONFIG.expediteur (alias Gmail vérifié) par le service avancé Gmail
+ * (droit « gmail.send » seulement). À SAFE, ou si l'envoi par Gmail échoue : MailApp, depuis le compte Google.
+ * Accepte la forme objet de MailApp ({to, subject, body, htmlBody, name, replyTo, attachments}) ou (to, sujet, texte).
+ */
+function envoyer_(a, b, c) {
+  var o = typeof a === 'object' ? a : { to: a, subject: b, body: c };
+  if (CONFIG.expediteur && o.to !== CONFIG.emailProprietaire && typeof Gmail !== 'undefined') {
+    try { Gmail.Users.Messages.send({ raw: Utilities.base64EncodeWebSafe(mime_(o), Utilities.Charset.UTF_8) }, 'me'); return; }
+    catch (e) { console.error('Envoi Gmail impossible, repli sur MailApp : ' + e); }
+  }
+  MailApp.sendEmail(o);
+}
+
+function mime_(o) {
+  var b64 = function (t) { return Utilities.base64Encode(String(t), Utilities.Charset.UTF_8); };
+  var entete = function (t) { return /^[\x20-\x7e]*$/.test(t) ? t : '=?UTF-8?B?' + b64(t) + '?='; };
+  var lignes = function (t) { return t.replace(/(.{76})/g, '$1\r\n'); };
+  var f1 = 'safe-' + Utilities.getUuid(), f2 = 'safe-' + Utilities.getUuid();
+  var m = ['MIME-Version: 1.0',
+    'From: ' + entete(o.name || CONFIG.nomSite) + ' <' + CONFIG.expediteur + '>',
+    'To: ' + o.to,
+    'Subject: ' + entete(o.subject || '')];
+  if (o.replyTo) m.push('Reply-To: ' + o.replyTo);
+  m.push('Content-Type: multipart/mixed; boundary="' + f1 + '"', '', '--' + f1,
+    'Content-Type: multipart/alternative; boundary="' + f2 + '"', '',
+    '--' + f2, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
+    lignes(b64(o.body || String(o.htmlBody || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&'))));
+  if (o.htmlBody) m.push('--' + f2, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', lignes(b64(o.htmlBody)));
+  m.push('--' + f2 + '--');
+  (o.attachments || []).forEach(function (pj) {
+    var octets = pj.getBytes ? Utilities.base64Encode(pj.getBytes()) : b64(pj.data);
+    var nom = pj.getName ? pj.getName() : pj.name, type = pj.getContentType ? pj.getContentType() : pj.type;
+    m.push('--' + f1, 'Content-Type: ' + type + '; name="' + nom + '"', 'Content-Disposition: attachment; filename="' + nom + '"',
+      'Content-Transfer-Encoding: base64', '', lignes(octets));
+  });
+  m.push('--' + f1 + '--', '');
+  return m.join('\r\n');
 }
 
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }

@@ -9,7 +9,7 @@ Fiche de référence du site. Toute session (Claude ou humaine) la lit avant de 
 - **Où** : à domicile depuis Marseille 9e (Marseille, Aix-en-Provence, Aubagne, 45 km de route maximum) ou en ligne (visio, monde entier).
 - **Langues** : site et séances en français et en anglais.
 - **Domaine** : https://safewellbeing.fr/ (acheté chez OVH le 18/11/2026, 3 ans, renouvellement en novembre 2029, DNSSEC ; titulaire : voir SAFE-suivi). Fichier `CNAME` à la racine. Ancienne adresse https://i2taconception.github.io/safe/ redirigée par GitHub.
-- **Contact** : safeinfocontact@gmail.com (compte Google dédié : agenda, e-mails).
+- **Contact affiché** : contact@safewellbeing.fr (19/11 ; boîte Zimbra OVH transférée vers safeinfocontact@gmail.com, compte Google dédié : agenda, e-mails, script). E-mails aux clients envoyés au nom de contact@ (`CONFIG.expediteur`, alias Gmail, service avancé Gmail, droit `gmail.send`) ; notifications à SAFE par MailApp ; repli sur MailApp si Gmail échoue.
 
 ## 2. Règles à respecter (non négociables)
 
@@ -107,7 +107,7 @@ Ordre du formulaire : lieu > participants (prénom, nom, sexe Femme/Homme, premi
 6. (Abandonné le 18/11, pour mémoire) PayPal Professionnel : app Sandbox (Client ID dans `CONFIG.paypal.clientId`, secret en propriété), tester, puis Live (`env: 'live'`) et activer « Compte PayPal facultatif ».
 7. Ouvrir des créneaux : section « Disponibilités » de la page `/gestion/`, ou directement des événements « Dispo », « Dispo en ligne » ou « Dispo domicile » dans « Disponibilités SAFE » (répétitions acceptées). Tout événement de l'agenda principal bloque.
 
-Tests : `node outils/tests/tests.mjs` (26 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
+Tests : `node outils/tests/tests.mjs` (27 tests du backend, agendas, Maps et PayPal simulés), `node outils/tests/serveur.mjs --api` (aperçu local avec backend simulé ; code de gestion local : `gestion-locale-2026`).
 
 ## 7. SEO
 
@@ -119,7 +119,7 @@ E-mail pro (19/11) : boîte Zimbra Starter **contact@safewellbeing.fr** (organis
 
 ## 8. Journal
 
-- **19/11/2026** : boîte contact@safewellbeing.fr (Zimbra OVH), transfert vers Gmail, filtre anti-spam Gmail, DMARC. Le site affiche encore safeinfocontact@gmail.com (bascule après l'alias Gmail).
+- **19/11/2026** : boîte contact@safewellbeing.fr (Zimbra OVH), transfert vers Gmail, filtre anti-spam Gmail, DMARC. Alias Gmail ajouté par Adrien ; adresse affichée sur tout le site passée à contact@safewellbeing.fr ; e-mails aux clients envoyés au nom de contact@ (service Gmail, `gmail.send`). Tests : 27.
 - **19/11/2026** : accès discret à la page de gestion : petit lotus en pied de page, sur toutes les pages.
 - **19/11/2026** : bouton « Paiement reçu » dans la page de gestion (paiements PayPal des séances en ligne, suivi manuel ; automatique prévu avec un compte PayPal Professionnel après le SIRET). Adresse PayPal changée dans la propriété `PAIEMENT_PAYPAL`. Tests : 26.
 - **18/11/2026** : section « Disponibilités » dans la page de gestion (ouvrir, répéter chaque semaine, retirer une date ou la suite) ; simulateur : événements répétés. Tests : 25. HTTPS forcé sur GitHub Pages.

@@ -33,7 +33,7 @@ const serveur = http.createServer((req, res) => {
   if (url.pathname === '/__emails') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify(sim.emails)); }
   if (avecApi && url.pathname === '/assets/js/config.js') {
     res.writeHead(200, { 'Content-Type': 'text/javascript' });
-    return res.end("window.SITE_CONFIG = { apiReservation: '/api', emailContact: 'safeinfocontact@gmail.com' };");
+    return res.end("window.SITE_CONFIG = { apiReservation: '/api', emailContact: 'contact@safewellbeing.fr' };");
   }
   let fichier = path.join(RACINE, decodeURIComponent(url.pathname));
   if (!fichier.startsWith(RACINE)) { res.writeHead(403); return res.end(); }
