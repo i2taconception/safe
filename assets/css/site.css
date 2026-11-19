@@ -202,6 +202,8 @@ section{scroll-margin-top:5rem}
 .pied h2{font:400 .8rem var(--f-label);letter-spacing:.18em;text-transform:uppercase;color:var(--or-clair);margin-bottom:.8rem}
 .pied ul{list-style:none;padding:0;margin:0;display:grid;gap:.4rem}
 .pied .bas{border-top:1px solid #4A5640;margin-top:2.5rem;padding-top:1.5rem;font-size:.85rem;color:#C9C3B4}
+.pied .acces{display:inline-block;vertical-align:middle;margin-left:.5rem;padding:.35rem;color:#C9C3B4;opacity:.35;line-height:0;border-radius:50%}
+.pied .acces:hover,.pied .acces:focus-visible{opacity:.9}
 @media (max-width:760px){.pied .grille{grid-template-columns:1fr}}
 
 /* Pages intérieures */

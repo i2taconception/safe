@@ -64,7 +64,7 @@ index.html, en/index.html        Accueil FR et EN (écrits à la main)
 reserver/, en/book/              Réservation (générées)
 charte/, en/charter/             Charte de séance et attestation de santé (générées)
 mentions-legales/, conditions-de-vente/, confidentialite/   Pages légales FR, noindex (générées)
-gestion/                         Page de gestion SAFE, noindex, non liée (générée ; script assets/js/gestion.js)
+gestion/                         Page de gestion SAFE, noindex (générée ; script assets/js/gestion.js), accessible par le petit lotus discret à droite de « © 2026 SAFE » dans le pied de page (`.pied .acces`, 19/11)
 404.html, robots.txt, sitemap.xml, favicon.ico
 assets/css/site.css              Toute la mise en forme
 assets/js/config.js              URL du script Google + e-mail de contact
@@ -117,6 +117,7 @@ DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:
 
 ## 8. Journal
 
+- **19/11/2026** : accès discret à la page de gestion : petit lotus en pied de page, sur toutes les pages.
 - **19/11/2026** : bouton « Paiement reçu » dans la page de gestion (paiements PayPal des séances en ligne, suivi manuel ; automatique prévu avec un compte PayPal Professionnel après le SIRET). Adresse PayPal changée dans la propriété `PAIEMENT_PAYPAL`. Tests : 26.
 - **18/11/2026** : section « Disponibilités » dans la page de gestion (ouvrir, répéter chaque semaine, retirer une date ou la suite) ; simulateur : événements répétés. Tests : 25. HTTPS forcé sur GitHub Pages.
 - **18/11/2026** : domaine safewellbeing.fr acheté chez OVH ; adresses du site, sitemap, robots, page 404 et `CONFIG.urlSite` passés sur https://safewellbeing.fr/, fichier `CNAME`.
