@@ -113,10 +113,13 @@ Tests : `node outils/tests/tests.mjs` (26 tests du backend, agendas, Maps et Pay
 
 Un seul H1 par page, description 120 à 165 caractères, canonical, hreflang FR/EN, Open Graph. Données structurées `HealthAndBeautyBusiness` et `FAQPage` sur les accueils. Adresse de référence : `https://safewellbeing.fr/` (pages, sitemap, robots, `URL` de `generer_pages.py`, `CONFIG.urlSite` de Code.gs). La page 404 utilise des chemins absolus `/`.
 
-DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:8000::153 à 2606:50c0:8003::153, CNAME `www` vers `i2taconception.github.io.` ; ne pas toucher aux entrées MX/SPF de la boîte Zimbra.
+DNS (zone OVH) : A vers 185.199.108.153 à 185.199.111.153, AAAA vers 2606:50c0:8000::153 à 2606:50c0:8003::153, CNAME `www` vers `i2taconception.github.io.` ; ne pas toucher aux entrées MX/SPF/DKIM de la boîte Zimbra. DMARC `_dmarc` : `v=DMARC1;p=none;` (19/11).
+
+E-mail pro (19/11) : boîte Zimbra Starter **contact@safewellbeing.fr** (organisation « SAFE », nom affiché « SAFE », webmail https://webmail.mail.ovh.net/), DKIM actif, transfert vers safeinfocontact@gmail.com avec copie gardée ; filtre Gmail « to:contact@safewellbeing.fr → jamais en spam ». Envoi depuis Gmail en tant que contact@ : SMTP smtp.mail.ovh.net, port 465, SSL.
 
 ## 8. Journal
 
+- **19/11/2026** : boîte contact@safewellbeing.fr (Zimbra OVH), transfert vers Gmail, filtre anti-spam Gmail, DMARC. Le site affiche encore safeinfocontact@gmail.com (bascule après l'alias Gmail).
 - **19/11/2026** : accès discret à la page de gestion : petit lotus en pied de page, sur toutes les pages.
 - **19/11/2026** : bouton « Paiement reçu » dans la page de gestion (paiements PayPal des séances en ligne, suivi manuel ; automatique prévu avec un compte PayPal Professionnel après le SIRET). Adresse PayPal changée dans la propriété `PAIEMENT_PAYPAL`. Tests : 26.
 - **18/11/2026** : section « Disponibilités » dans la page de gestion (ouvrir, répéter chaque semaine, retirer une date ou la suite) ; simulateur : événements répétés. Tests : 25. HTTPS forcé sur GitHub Pages.
