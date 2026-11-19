@@ -143,18 +143,32 @@
   }
 
   // ---------------------------------------------------------------- Séances à venir
+  var voirAnnulees = false;
   function sectionSeances() {
     var s = el('<section id="g-seances" style="margin-top:2rem"><h2>Séances à venir</h2></section>');
     var aVenir = donnees.seances.filter(function (x) { return !x.passee; });
-    if (!aVenir.length) { s.appendChild(el('<p>Aucune séance réservée pour le moment.</p>')); return s; }
-    aVenir.forEach(function (x) {
+    var actives = aVenir.filter(function (x) { return x.statut === 'confirmee'; });
+    var annulees = aVenir.filter(function (x) { return x.statut !== 'confirmee'; });
+    if (!actives.length) s.appendChild(el('<p>Aucune séance réservée pour le moment.</p>'));
+    actives.forEach(function (x) { s.appendChild(carteSeance(x)); });
+    if (annulees.length) {
+      var lien = el('<p><button type="button" class="lien-discret" style="background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer">' +
+        (voirAnnulees ? 'Masquer les séances annulées' : 'Voir les séances annulées (' + annulees.length + ')') + '</button></p>');
+      lien.querySelector('button').addEventListener('click', function () { voirAnnulees = !voirAnnulees; var anc = document.getElementById('g-seances'); anc.parentNode.replaceChild(sectionSeances(), anc); });
+      s.appendChild(lien);
+      if (voirAnnulees) annulees.forEach(function (x) { s.appendChild(carteSeance(x)); });
+    }
+    return s;
+  }
+
+  function carteSeance(x) {
       var annulee = x.statut !== 'confirmee';
       var lignes = x.participants.map(function (p, i) {
         var attente = !annulee && p.mode === 'virement' && p.statut === 'a_regler';
         return '<li>' + esc(p.nom) + ' : ' + esc(MODES[p.mode] || p.mode) + ', ' + (attente ? '<strong>' : '') + esc(STATUTS[p.statut] || p.statut) + (attente ? '</strong>' : '') + (p.montant ? ' (' + euros(p.montant) + ')' : '') +
           (attente ? '<div class="paiement" data-i="' + i + '"></div>' : '') + '</li>';
       }).join('');
-      var carte = el('<article class="encadre" style="margin-bottom:1rem' + (annulee ? ';opacity:.55' : '') + '">' +
+      var carte = el('<article class="encadre" style="margin-bottom:1rem' + (annulee ? ';opacity:.7' : '') + '">' +
         '<p style="margin:0 0 .3rem;font-weight:650">' + esc(date(x.debut, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })) +
         ' · ' + x.duree + ' min · ' + (x.format === 'domicile' ? 'chez le client' + (x.ville ? ' (' + esc(x.ville) + ')' : '') : 'en ligne') +
         (annulee ? ' · <strong>ANNULÉE</strong>' : '') + '</p>' +
@@ -163,14 +177,32 @@
         (x.participants.some(function (p) { return p.mode === 'virement'; }) ? '<p style="margin:0" class="petit">Référence PayPal attendue : SAFE-' + esc(x.id) + '</p>' : '') +
         '<div class="actions"></div></article>');
       carte.querySelectorAll('.paiement').forEach(function (z) { boutonPaiement(z, x, Number(z.getAttribute('data-i'))); });
+      var act = carte.querySelector('.actions');
       if (!annulee) {
         var b = el('<button type="button" class="btn btn-clair" style="margin-top:.8rem">Annuler cette séance</button>');
-        b.addEventListener('click', function () { confirmerAnnulation(carte.querySelector('.actions'), x); });
-        carte.querySelector('.actions').appendChild(b);
+        b.addEventListener('click', function () { confirmerAnnulation(act, x); });
+        act.appendChild(b);
+      } else {
+        var sup = el('<button type="button" class="btn btn-clair petit" style="margin-top:.8rem">Supprimer</button>');
+        sup.addEventListener('click', function () {
+          act.innerHTML = '';
+          var c = el('<div style="margin-top:.8rem"><p class="petit" style="margin:0 0 .5rem">Supprimer définitivement cette séance de l\'agenda ? Elle ne pourra pas être retrouvée.' +
+            (x.participants.some(function (p) { return p.statut === 'a_regler'; }) ? ' Attention : une somme y est encore indiquée « à régler ».' : '') + '</p>' +
+            '<p style="display:flex;gap:.6rem;flex-wrap:wrap;margin:0"><button type="button" class="btn oui">Supprimer</button><button type="button" class="btn btn-clair non">Garder</button></p><p class="statut" role="status"></p></div>');
+          c.querySelector('.non').addEventListener('click', function () { var anc = document.getElementById('g-seances'); anc.parentNode.replaceChild(sectionSeances(), anc); });
+          c.querySelector('.oui').addEventListener('click', function () {
+            var btn = this, st = c.querySelector('.statut'); btn.disabled = true; st.className = 'statut'; st.textContent = 'Suppression…';
+            post({ action: 'admin_supprimer', id: x.id }).then(function (r) {
+              if (!r.ok) { btn.disabled = false; st.className = 'statut ko'; st.textContent = r.message || 'Erreur.'; return; }
+              donnees.seances = donnees.seances.filter(function (y) { return y.id !== x.id; });
+              var anc = document.getElementById('g-seances'); anc.parentNode.replaceChild(sectionSeances(), anc);
+            }).catch(function () { btn.disabled = false; st.className = 'statut ko'; st.textContent = 'Le serveur ne répond pas. Réessayez.'; });
+          });
+          act.appendChild(c);
+        });
+        act.appendChild(sup);
       }
-      s.appendChild(carte);
-    });
-    return s;
+      return carte;
   }
 
   function boutonPaiement(z, x, i) {

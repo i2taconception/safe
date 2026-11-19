@@ -473,4 +473,17 @@ test('e-mails aux clients envoyés au nom de contact@ (Gmail, alias), notificati
   assert.ok(sim.emails.some(e => e.to === 'lea@exemple.fr'));
 });
 
+test('gestion : suppression d\'une séance annulée seulement', () => {
+  const sim = preparer();
+  const C = 'lotus-rose-2026'; sim.proprietes.set('ADMIN_CODE', C);
+  assert.equal(sim.post(demande(sim)).ok, true);
+  const id = sim.agendas.resas.at(-1).extendedProperties.private.resaId;
+  assert.equal(sim.post({ action: 'admin_supprimer', code: C, id }).code, 'confirmee');
+  assert.equal(sim.post({ action: 'admin_annuler', code: C, id }).ok, true);
+  assert.equal(sim.post({ action: 'admin_supprimer', code: 'faux', id }).code, 'code');
+  assert.equal(sim.post({ action: 'admin_supprimer', code: C, id }).ok, true);
+  assert.equal(sim.agendas.resas.length, 0);
+  assert.equal(sim.post({ action: 'admin_liste', code: C }).seances.length, 0);
+});
+
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ', des échecs ci-dessus' : ''));

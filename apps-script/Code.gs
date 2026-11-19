@@ -109,6 +109,7 @@ function doPost(e) {
       case 'admin_liste':         verifierAdmin_(d.code); return json_(adminListe_());
       case 'admin_pack_especes':  verifierAdmin_(d.code); return json_(adminPackEspeces_(d));
       case 'admin_annuler':       verifierAdmin_(d.code); return json_(adminAnnuler_(d));
+      case 'admin_supprimer':     verifierAdmin_(d.code); return json_(adminSupprimer_(d));
       case 'admin_paiement_recu': verifierAdmin_(d.code); return json_(adminPaiementRecu_(d));
       case 'admin_dispo_ajouter': verifierAdmin_(d.code); return json_(adminDispoAjouter_(d));
       case 'admin_dispo_retirer': verifierAdmin_(d.code); return json_(adminDispoRetirer_(d));
@@ -1003,6 +1004,16 @@ function adminAnnuler_(d) {
       envoyer_({ to: y.email, name: CONFIG.nomSite, replyTo: CONFIG.expediteur || CONFIG.emailProprietaire, subject: tx.sujetAnnulationSafe(qd), htmlBody: gabaritEmail_(tx.titreAnnulation, html, lang) });
     });
     return { ok: true, rembourses: rembourses.length, aRembourser: aRembourser.length, prevenus: destinataires.length };
+  });
+}
+
+/** Supprime définitivement de l'agenda une séance déjà annulée (page de gestion). */
+function adminSupprimer_(d) {
+  return avecVerrou_(function () {
+    var ev = trouverEvenement_(d.id), q = ev.extendedProperties.private;
+    if (q.statut === 'confirmee') throw erreurUtilisateur_('confirmee', 'Seule une séance annulée peut être supprimée. Annulez-la d\'abord.');
+    Calendar.Events.remove(CONFIG.agendaReservations, ev.id);
+    return { ok: true };
   });
 }
 
